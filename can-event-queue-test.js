@@ -1,7 +1,5 @@
 var QUnit = require('steal-qunit');
-var assign = require('can-util/js/assign/assign');
 var eventQueue = require("can-event-queue");
-var canDev = require('can-util/js/dev/dev');
 
 
 QUnit.module('can-event-queue',{
