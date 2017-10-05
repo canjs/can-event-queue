@@ -15,6 +15,11 @@ function getHandlers(obj) {
     }
     var handlers = meta.handlers;
     if(!handlers) {
+        // Handlers are organized by:
+        // event name - the type of event bound to
+        // binding type - "event" for things that expect an event object (legacy), "onKeyValue" for reflective bindings.
+        // queue name - mutate, queue, etc
+        // handlers - the handlers.
         handlers = meta.handlers = new KeyTree([Object, Object, Object, Array],{
             onFirst: function(){
                 if( obj._eventSetup ) {
@@ -104,8 +109,6 @@ var eventQueue = function(obj) {
     // add symbols
     canReflect.assignSymbols(obj, symbols);
     return obj;
-
-	// keyName => queueName => handlers
 };
 
 
