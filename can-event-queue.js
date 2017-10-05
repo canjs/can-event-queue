@@ -59,7 +59,7 @@ var props = {
             if(handlersByType) {
                 queues.batch.start();
                 if(handlersByType.onKeyValue) {
-                    queues.enqueueByQueue(handlersByType.onKeyValue, this, args, function(handler, context, args){
+                    queues.enqueueByQueue(handlersByType.onKeyValue, this, args, function(){
                         // TODO
             			return {};
             		});
@@ -68,7 +68,7 @@ var props = {
 
                     event.batchNum = queues.batch.number();
                     var eventAndArgs = [event].concat(args);
-                    queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, function(handler, context, args){
+                    queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, function(){
                         // TODO
             			return {};
             		});
