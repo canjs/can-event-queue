@@ -64,19 +64,13 @@ var props = {
             if(handlersByType) {
                 queues.batch.start();
                 if(handlersByType.onKeyValue) {
-                    queues.enqueueByQueue(handlersByType.onKeyValue, this, args, function(){
-                        // TODO
-            			return {};
-            		});
+                    queues.enqueueByQueue(handlersByType.onKeyValue, this, args, event.makeMeta, event.reasonLog);
                 }
                 if(handlersByType.event) {
 
                     event.batchNum = queues.batch.number();
                     var eventAndArgs = [event].concat(args);
-                    queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, function(){
-                        // TODO
-            			return {};
-            		});
+                    queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, event.makeMeta, event.reasonLog);
                 }
                 queues.batch.stop();
             }
