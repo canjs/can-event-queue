@@ -44,7 +44,7 @@
   "dependencies": {
     "can-key-tree": "0.0.2",
     "can-queues": "^0.1.1",
-    "can-reflect": "^1.4.5",
+    "can-reflect": "^1.7.0",
     "can-symbol": "^1.2.0",
     "can-util": "^3.10.11"
   },
