@@ -38,9 +38,9 @@ function getHandlers(obj) {
 
 // These are the properties we are going to add to objects
 var props = {
-    dispatch: function(event, args){
-        //!steal-remove-start
-        if (arguments.length > 2) {
+	dispatch: function(event, args){
+		//!steal-remove-start
+		if (arguments.length > 2) {
 			canDev.warn('Arguments to dispatch should be an array, not multiple arguments.');
 			args = Array.prototype.slice.call(arguments, 1);
 		}
@@ -51,37 +51,36 @@ var props = {
 		}
 		//!steal-remove-end
 
-
 		// Don't send events if initalizing.
-        if (!this.__inSetup) {
-            if(typeof event === 'string') {
-                event = {
-                    type: event
-                };
-            }
-            var handlers = getHandlers(this);
-            var handlersByType = handlers.getNode([event.type]);
-            if(handlersByType) {
-                queues.batch.start();
-                if(handlersByType.onKeyValue) {
-                    queues.enqueueByQueue(handlersByType.onKeyValue, this, args, event.makeMeta, event.reasonLog);
-                }
-                if(handlersByType.event) {
+		if (!this.__inSetup) {
+			if(typeof event === 'string') {
+				event = {
+					type: event
+				};
+			}
+			var handlers = getHandlers(this);
+			var handlersByType = handlers.getNode([event.type]);
+			if(handlersByType) {
+				queues.batch.start();
+				if(handlersByType.onKeyValue) {
+					queues.enqueueByQueue(handlersByType.onKeyValue, this, args, event.makeMeta, event.reasonLog);
+				}
+				if(handlersByType.event) {
 
-                    event.batchNum = queues.batch.number();
-                    var eventAndArgs = [event].concat(args);
-                    queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, event.makeMeta, event.reasonLog);
-                }
-                queues.batch.stop();
-            }
-        }
-    },
-    addEventListener: function(key, handler, queueName) {
-        getHandlers(this).add([key, "event",queueName || "mutate", handler]);
-    },
-    removeEventListener: function(key, handler, queueName) {
-        getHandlers(this).delete([key, "event", queueName || "mutate", handler]);
-    }
+					event.batchNum = queues.batch.number();
+					var eventAndArgs = [event].concat(args);
+					queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, event.makeMeta, event.reasonLog);
+				}
+				queues.batch.stop();
+			}
+		}
+	},
+	addEventListener: function(key, handler, queueName) {
+		getHandlers(this).add([key, "event",queueName || "mutate", handler]);
+	},
+	removeEventListener: function(key, handler, queueName) {
+		getHandlers(this).delete([key, "event", queueName || "mutate", handler]);
+	}
 };
 props.on = props.addEventListener;
 props.off = props.removeEventListener;
