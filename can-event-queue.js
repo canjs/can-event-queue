@@ -5,14 +5,24 @@ var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
 
+// Ensure the "obj" passed as an argument has an object on @@can.meta
+var ensureMeta = function ensureMeta(obj) {
+	var metaSymbol = canSymbol.for("can.meta");
+	var meta = obj[metaSymbol];
+
+	if (!meta) {
+		meta = {};
+		canReflect.setKeyValue(obj, metaSymbol, meta);
+	}
+
+	return meta;
+};
+
 // getHandlers returns a KeyTree used for event handling.
 // `handlers` will be on the `can.meta` symbol on the object.
-var metaSymbol = canSymbol.for("can.meta");
 function getHandlers(obj) {
-    var meta = obj[metaSymbol];
-    if(!meta) {
-        canReflect.setKeyValue(obj, metaSymbol, meta = {});
-    }
+    var meta = ensureMeta(obj);
+
     var handlers = meta.handlers;
     if(!handlers) {
         // Handlers are organized by:
@@ -58,6 +68,14 @@ var props = {
 					type: event
 				};
 			}
+
+			//!steal-remove-start
+			var meta = ensureMeta(this);
+			if (typeof meta._log === "function") {
+				meta._log.call(this, event, args);
+			}
+			//!steal-remove-end
+
 			var handlers = getHandlers(this);
 			var handlersByType = handlers.getNode([event.type]);
 			if(handlersByType) {
