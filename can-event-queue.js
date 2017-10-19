@@ -69,7 +69,18 @@ var props = {
 				};
 			}
 
-			//!steal-remove-start
+      //!steal-remove-start
+      if (!event.reasonLog) {
+          event.reasonLog = [ canReflect.getName(this), "dispatched", '"' + event + '"', "with" ].concat(args);
+      }
+      if (!event.makeMeta) {
+          event.makeMeta = function makeMeta(handler, context, args) {
+              return {
+                  log: [ canReflect.getName(handler), "called because" ].concat(args[0].reasonLog),
+              };
+          };
+      }
+
 			var meta = ensureMeta(this);
 			if (typeof meta._log === "function") {
 				meta._log.call(this, event, args);
@@ -98,7 +109,7 @@ var props = {
 	},
 	removeEventListener: function(key, handler, queueName) {
 		getHandlers(this).delete([key, "event", queueName || "mutate", handler]);
-	}
+  }
 };
 props.on = props.addEventListener;
 props.off = props.removeEventListener;
