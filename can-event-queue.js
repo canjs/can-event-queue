@@ -57,16 +57,22 @@ var props = {
             if(typeof event === 'string') {
                 event = {
                     type: event,
-                    //!steal-remove-start
-                    reasonLog: [ canReflect.getName(this), "dispatched", '"' + event + '"', "with args", JSON.stringify(args) ],
-                    makeMeta: function makeMeta(handler, context, args) {
-                        return {
-                            log: [ canReflect.getName(handler), "called because" ].concat(args[0].reasonLog),
-                        };
-                    },
-                    //!steal-remove-end
                 };
             }
+
+            //!steal-remove-start
+            if (!event.reasonLog) {
+                event.reasonLog = [ canReflect.getName(this), "dispatched", '"' + event + '"', "with" ].concat(args);
+            }
+            if (!event.makeMeta) {
+                event.makeMeta = function makeMeta(handler, context, args) {
+                    return {
+                        log: [ canReflect.getName(handler), "called because" ].concat(args[0].reasonLog),
+                    };
+                };
+            }
+            //!steal-remove-end
+
             var handlers = getHandlers(this);
             var handlersByType = handlers.getNode([event.type]);
             if(handlersByType) {
