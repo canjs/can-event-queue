@@ -1,7 +1,7 @@
 {
   "name": "can-event-queue",
   "main": "./can-event-queue.js",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A event mixin that uses queues to dispatch handlers",
   "homepage": "",
   "repository": {
