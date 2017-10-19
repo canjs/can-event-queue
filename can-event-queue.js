@@ -5,14 +5,24 @@ var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
 
+// Ensure the "obj" passed as an argument has an object on @@can.meta
+var ensureMeta = function ensureMeta(obj) {
+	var metaSymbol = canSymbol.for("can.meta");
+	var meta = obj[metaSymbol];
+
+	if (!meta) {
+		meta = {};
+		canReflect.setKeyValue(obj, metaSymbol, meta);
+	}
+
+	return meta;
+};
+
 // getHandlers returns a KeyTree used for event handling.
 // `handlers` will be on the `can.meta` symbol on the object.
-var metaSymbol = canSymbol.for("can.meta");
 function getHandlers(obj) {
-    var meta = obj[metaSymbol];
-    if(!meta) {
-        canReflect.setKeyValue(obj, metaSymbol, meta = {});
-    }
+    var meta = ensureMeta(obj);
+
     var handlers = meta.handlers;
     if(!handlers) {
         // Handlers are organized by:
@@ -38,9 +48,9 @@ function getHandlers(obj) {
 
 // These are the properties we are going to add to objects
 var props = {
-    dispatch: function(event, args){
-        //!steal-remove-start
-        if (arguments.length > 2) {
+	dispatch: function(event, args){
+		//!steal-remove-start
+		if (arguments.length > 2) {
 			canDev.warn('Arguments to dispatch should be an array, not multiple arguments.');
 			args = Array.prototype.slice.call(arguments, 1);
 		}
@@ -51,51 +61,55 @@ var props = {
 		}
 		//!steal-remove-end
 
-
 		// Don't send events if initalizing.
-        if (!this.__inSetup) {
-            if(typeof event === 'string') {
-                event = {
-                    type: event,
-                };
-            }
+		if (!this.__inSetup) {
+			if(typeof event === 'string') {
+				event = {
+					type: event
+				};
+			}
 
-            //!steal-remove-start
-            if (!event.reasonLog) {
-                event.reasonLog = [ canReflect.getName(this), "dispatched", '"' + event + '"', "with" ].concat(args);
-            }
-            if (!event.makeMeta) {
-                event.makeMeta = function makeMeta(handler, context, args) {
-                    return {
-                        log: [ canReflect.getName(handler), "called because" ].concat(args[0].reasonLog),
-                    };
-                };
-            }
-            //!steal-remove-end
+      //!steal-remove-start
+      if (!event.reasonLog) {
+          event.reasonLog = [ canReflect.getName(this), "dispatched", '"' + event + '"', "with" ].concat(args);
+      }
+      if (!event.makeMeta) {
+          event.makeMeta = function makeMeta(handler, context, args) {
+              return {
+                  log: [ canReflect.getName(handler), "called because" ].concat(args[0].reasonLog),
+              };
+          };
+      }
 
-            var handlers = getHandlers(this);
-            var handlersByType = handlers.getNode([event.type]);
-            if(handlersByType) {
-                queues.batch.start();
-                if(handlersByType.onKeyValue) {
-                    queues.enqueueByQueue(handlersByType.onKeyValue, this, args, event.makeMeta, event.reasonLog);
-                }
-                if(handlersByType.event) {
+			var meta = ensureMeta(this);
+			if (typeof meta._log === "function") {
+				meta._log.call(this, event, args);
+			}
+			//!steal-remove-end
 
-                    event.batchNum = queues.batch.number();
-                    var eventAndArgs = [event].concat(args);
-                    queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, event.makeMeta, event.reasonLog);
-                }
-                queues.batch.stop();
-            }
-        }
-    },
-    addEventListener: function(key, handler, queueName) {
-        getHandlers(this).add([key, "event",queueName || "mutate", handler]);
-    },
-    removeEventListener: function(key, handler, queueName) {
-        getHandlers(this).delete([key, "event", queueName || "mutate", handler]);
-    }
+			var handlers = getHandlers(this);
+			var handlersByType = handlers.getNode([event.type]);
+			if(handlersByType) {
+				queues.batch.start();
+				if(handlersByType.onKeyValue) {
+					queues.enqueueByQueue(handlersByType.onKeyValue, this, args, event.makeMeta, event.reasonLog);
+				}
+				if(handlersByType.event) {
+
+					event.batchNum = queues.batch.number();
+					var eventAndArgs = [event].concat(args);
+					queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, event.makeMeta, event.reasonLog);
+				}
+				queues.batch.stop();
+			}
+		}
+	},
+	addEventListener: function(key, handler, queueName) {
+		getHandlers(this).add([key, "event",queueName || "mutate", handler]);
+	},
+	removeEventListener: function(key, handler, queueName) {
+		getHandlers(this).delete([key, "event", queueName || "mutate", handler]);
+  }
 };
 props.on = props.addEventListener;
 props.off = props.removeEventListener;

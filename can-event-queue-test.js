@@ -1,6 +1,6 @@
 var QUnit = require('steal-qunit');
 var eventQueue = require("can-event-queue");
-
+var queues = require("can-queues");
 
 QUnit.module('can-event-queue',{
 	setup: function(){ },
@@ -34,9 +34,9 @@ QUnit.test("basics", function(){
 	});
 
 
-	eventQueue.start();
+	queues.batch.start();
 	obj.dispatch("first",[1,2]);
-	eventQueue.stop();
+	queues.batch.stop();
 
 });
 
@@ -72,11 +72,11 @@ QUnit.test("flushing works (#18)", 3, function(){
 	obj.on("third", function(){
 		thirdFired = true;
 	});
-	eventQueue.start();
+	queues.batch.start();
 	obj.dispatch("first");
 	obj.dispatch("second");
 	obj.dispatch("third");
-	eventQueue.stop();
+	queues.batch.stop();
 
 });
 
@@ -87,10 +87,10 @@ QUnit.test("flushing a future batch (#18)", 3, function(){
 	var obj = eventQueue({});
 
 	obj.on("first", function(){
-		eventQueue.start();
+		queues.batch.start();
 		obj.dispatch("second");
 		obj.dispatch("third");
-		eventQueue.stop();
+		queues.batch.stop();
 
 		eventQueue.flush();
 		QUnit.ok(firstFired, "first fired");
@@ -106,8 +106,8 @@ QUnit.test("flushing a future batch (#18)", 3, function(){
 	obj.on("third", function(){
 		thirdFired = true;
 	});
-	eventQueue.start();
+	queues.batch.start();
 	obj.dispatch("first");
-	eventQueue.stop();
+	queues.batch.stop();
 
 });
