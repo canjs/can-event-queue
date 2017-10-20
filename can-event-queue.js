@@ -74,9 +74,9 @@ var props = {
           event.reasonLog = [ canReflect.getName(this), "dispatched", '"' + event + '"', "with" ].concat(args);
       }
       if (!event.makeMeta) {
-          event.makeMeta = function makeMeta(handler, context, args) {
+          event.makeMeta = function makeMeta(handler) {
               return {
-                  log: [ canReflect.getName(handler), "called because" ].concat(args[0].reasonLog),
+                  log: [ canReflect.getName(handler) ]
               };
           };
       }
