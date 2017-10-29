@@ -117,8 +117,8 @@ if(typeof document !== "undefined") {
 	QUnit.test("can listen to DOM events", 1,function(){
 		var el = document.createElement("div");
 		var handler = function(){
-			QUnit.ok(true, "click dispatched")
-		}
+			QUnit.ok(true, "click dispatched");
+		};
 		eventQueue.on.call(el,"click", handler);
 		domEvents.dispatch.call(el, "click");
 		eventQueue.off.call(el,"click", handler);
