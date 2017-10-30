@@ -43,8 +43,6 @@ var ensureMeta = function ensureMeta(obj) {
 	var lifecycleHandlers = meta.lifecycleHandlers;
 	if(!lifecycleHandlers) {
 		// lifecycleHandlers are organized by:
-		// event name - the type of event bound to
-		// binding type - "event" for things that expect an event object (legacy), "onKeyValue" for reflective bindings.
 		// queue name - mutate, queue, etc
 		// lifecycleHandlers - the lifecycleHandlers.
 		lifecycleHandlers = meta.lifecycleHandlers = new KeyTree([Object, Array]);
