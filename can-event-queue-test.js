@@ -2,6 +2,7 @@ var QUnit = require('steal-qunit');
 var eventQueue = require("can-event-queue");
 var queues = require("can-queues");
 var domEvents = require("can-util/dom/events/events");
+var canSymbol = require("can-symbol");
 
 QUnit.module('can-event-queue',{
 	setup: function(){ },
@@ -125,3 +126,46 @@ if(typeof document !== "undefined") {
 		domEvents.dispatch.call(el, "click");
 	});
 }
+
+test("@@can.isBound symbol", function() {
+	var obj = eventQueue({});
+	var handler = function() {};
+
+	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound initially");
+
+	obj.on("first", handler);
+	QUnit.ok(obj[canSymbol.for("can.isBound")](), "Object is bound after adding listener");
+
+	obj.off("first", handler);
+	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound after removing listener");
+
+	obj[canSymbol.for("can.onBoundChange")](handler);
+	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound after adding bound change listener");
+
+});
+
+test("Events when object is bound/unbound", function() {
+	expect(2);
+	var obj = eventQueue({});
+	var trueCaseHit = false;
+	var metaHandler = function(newVal) {
+		if(!trueCaseHit) {
+			QUnit.ok(newVal, "new value reflects other events bound");
+			trueCaseHit = true;
+		} else {
+			QUnit.ok(!newVal, "new value reflects all events unbound");
+		}
+	};
+	var handler = function() {};
+
+	obj[canSymbol.for("can.onBoundChange")](metaHandler);
+
+	obj.on("first", handler);
+	obj.off("first", handler);
+
+	// Sanity check.  Ensure that no more events fire after offBoundChange
+	obj[canSymbol.for("can.offBoundChange")](metaHandler);
+	obj.on("first", handler);
+	obj.off("first", handler);
+
+});
