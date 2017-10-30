@@ -18,6 +18,35 @@ var ensureMeta = function ensureMeta(obj) {
 		meta = {};
 		canReflect.setKeyValue(obj, metaSymbol, meta);
 	}
+	var handlers = meta.handlers;
+	if(!handlers) {
+		// Handlers are organized by:
+		// event name - the type of event bound to
+		// binding type - "event" for things that expect an event object (legacy), "onKeyValue" for reflective bindings.
+		// queue name - mutate, queue, etc
+		// handlers - the handlers.
+		handlers = meta.handlers = new KeyTree([Object, Object, Object, Array],{
+			onFirst: function(){
+				if( obj._eventSetup ) {
+					obj._eventSetup();
+				}
+				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [true]);
+			},
+			onEmpty: function(){
+				if( obj._eventTeardown ) {
+					obj._eventTeardown();
+				}
+				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [false]);
+			}
+		});
+	}
+	var lifecycleHandlers = meta.lifecycleHandlers;
+	if(!lifecycleHandlers) {
+		// lifecycleHandlers are organized by:
+		// queue name - mutate, queue, etc
+		// lifecycleHandlers - the lifecycleHandlers.
+		lifecycleHandlers = meta.lifecycleHandlers = new KeyTree([Object, Array]);
+	}
 
 	return meta;
 };
@@ -25,36 +54,20 @@ var ensureMeta = function ensureMeta(obj) {
 // getHandlers returns a KeyTree used for event handling.
 // `handlers` will be on the `can.meta` symbol on the object.
 function getHandlers(obj) {
-    var meta = ensureMeta(obj);
+	return ensureMeta(obj).handlers;
+}
 
-    var handlers = meta.handlers;
-    if(!handlers) {
-        // Handlers are organized by:
-        // event name - the type of event bound to
-        // binding type - "event" for things that expect an event object (legacy), "onKeyValue" for reflective bindings.
-        // queue name - mutate, queue, etc
-        // handlers - the handlers.
-        handlers = meta.handlers = new KeyTree([Object, Object, Object, Array],{
-            onFirst: function(){
-                if( obj._eventSetup ) {
-                    obj._eventSetup();
-                }
-            },
-            onEmpty: function(){
-                if( obj._eventTeardown ) {
-                    obj._eventTeardown();
-                }
-            }
-        });
-    }
-    return handlers;
+// getLifecycleHandlers returns a KeyTree used for handling first binding and last unbinding events
+// `lifecycleHandlers` will be on the `can.meta` symbol on the object.
+function getLifecycleHandlers(obj) {
+	return ensureMeta(obj).lifecycleHandlers;
 }
 
 // These are the properties we are going to add to objects
 var props = {
-	dispatch: function(event, args){
+	dispatch: function(event, args) {
 		//!steal-remove-start
-		if (arguments.length > 2) {
+		if (arguments.length > 4) {
 			canDev.warn('Arguments to dispatch should be an array, not multiple arguments.');
 			args = Array.prototype.slice.call(arguments, 1);
 		}
@@ -91,7 +104,7 @@ var props = {
 			}
 			//!steal-remove-end
 
-			var handlers = getHandlers(this);
+			var handlers = meta.handlers;
 			var handlersByType = handlers.getNode([event.type]);
 			if(handlersByType) {
 				queues.batch.start();
@@ -117,11 +130,11 @@ var props = {
 };
 
 var onKeyValueSymbol = canSymbol.for("can.onKeyValue"),
-    offKeyValueSymbol = canSymbol.for("can.offKeyValue"),
-    onEventSymbol = canSymbol.for("can.onEvent"),
-    offEventSymbol = canSymbol.for("can.offEvent"),
-    onValueSymbol = canSymbol.for("can.onValue"),
-    offValueSymbol = canSymbol.for("can.offValue");
+	offKeyValueSymbol = canSymbol.for("can.offKeyValue"),
+	onEventSymbol = canSymbol.for("can.onEvent"),
+	offEventSymbol = canSymbol.for("can.offEvent"),
+	onValueSymbol = canSymbol.for("can.onValue"),
+	offValueSymbol = canSymbol.for("can.offValue");
 
 props.on = function(eventName, handler, queue) {
 	var listenWithDOM = domEvents.canAddEventListener.call(this);
@@ -169,23 +182,32 @@ props.off = function(eventName, handler, queue) {
 	}
 };
 
-// The symbols we'll add to bojects
+// The symbols we'll add to objects
 var symbols = {
-    "can.onKeyValue": function(key, handler, queueName) {
-        getHandlers(this).add([key, "onKeyValue",queueName || "mutate", handler]);
-    },
-    "can.offKeyValue": function(key, handler, queueName) {
-        getHandlers(this).delete([key, "onKeyValue", queueName || "mutate", handler]);
-    }
+	"can.onKeyValue": function(key, handler, queueName) {
+		getHandlers(this).add([key, "onKeyValue",queueName || "mutate", handler]);
+	},
+	"can.offKeyValue": function(key, handler, queueName) {
+		getHandlers(this).delete([key, "onKeyValue", queueName || "mutate", handler]);
+	},
+	"can.onBoundChange": function(handler, queueName) {
+		getLifecycleHandlers(this).add([queueName || "mutate", handler]);
+	},
+	"can.offBoundChange": function(handler, queueName) {
+		getLifecycleHandlers(this).delete([queueName || "mutate", handler]);
+	},
+	"can.isBound": function() {
+		return getHandlers(this).size() > 0;
+	}
 };
 
 // The actual eventQueue mixin function
 var eventQueue = function(obj) {
-    // add properties
-    assign(obj, props);
-    // add symbols
-    canReflect.assignSymbols(obj, symbols);
-    return obj;
+	// add properties
+	assign(obj, props);
+	// add symbols
+	canReflect.assignSymbols(obj, symbols);
+	return obj;
 };
 
 
@@ -194,38 +216,38 @@ var eventQueue = function(obj) {
 // The following is for compatability with the old can-event/batch
 // This can be removed in a future version.
 function defineNonEnumerable(obj, prop, value) {
-    Object.defineProperty(obj, prop, {
-    	enumerable: false,
-    	value: value
-    });
+	Object.defineProperty(obj, prop, {
+		enumerable: false,
+		value: value
+	});
 }
 
 assign(eventQueue, props);
 defineNonEnumerable(eventQueue,"start", function(){
-    console.warn("use can-queues.batch.start()");
-    queues.batch.start();
+	console.warn("use can-queues.batch.start()");
+	queues.batch.start();
 });
 defineNonEnumerable(eventQueue,"stop", function(){
-    console.warn("use can-queues.batch.stop()");
-    queues.batch.stop();
+	console.warn("use can-queues.batch.stop()");
+	queues.batch.stop();
 });
 defineNonEnumerable(eventQueue,"flush", function(){
-    console.warn("use can-queues.flush()");
-    queues.flush();
+	console.warn("use can-queues.flush()");
+	queues.flush();
 });
 
 defineNonEnumerable(eventQueue,"afterPreviousEvents", function(handler){
-    console.warn("don't use afterPreviousEvents");
-    queues.mutateQueue.enqueue(function afterPreviousEvents(){
-        queues.mutateQueue.enqueue(handler);
-    });
-    queues.flush();
+	console.warn("don't use afterPreviousEvents");
+	queues.mutateQueue.enqueue(function afterPreviousEvents(){
+		queues.mutateQueue.enqueue(handler);
+	});
+	queues.flush();
 });
 
 defineNonEnumerable(eventQueue,"after", function(handler){
-    console.warn("don't use after");
-    queues.mutateQueue.enqueue(handler);
-    queues.flush();
+	console.warn("don't use after");
+	queues.mutateQueue.enqueue(handler);
+	queues.flush();
 });
 
 module.exports = eventQueue;
