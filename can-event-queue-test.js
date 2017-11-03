@@ -2,6 +2,7 @@ var QUnit = require('steal-qunit');
 var eventQueue = require("can-event-queue");
 var queues = require("can-queues");
 var domEvents = require("can-util/dom/events/events");
+var canSymbol = require("can-symbol");
 
 QUnit.module('can-event-queue',{
 	setup: function(){ },
@@ -125,3 +126,15 @@ if(typeof document !== "undefined") {
 		domEvents.dispatch.call(el, "click");
 	});
 }
+
+QUnit.test("empty unbind", function(){
+	var obj = eventQueue({});
+
+	obj.addEventListener("first", function(){});
+	obj.addEventListener("first", function(){},"notify");
+
+	var handlers = obj[canSymbol.for("can.meta")].handlers;
+	QUnit.equal(handlers.get(["first"]).length, 2, "2 first handlers");
+	obj.removeEventListener("first");
+	QUnit.equal(handlers.get(["first"]).length, 0, "first handlers removed");
+});
