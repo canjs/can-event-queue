@@ -18,15 +18,6 @@ var ensureMeta = function ensureMeta(obj) {
 		meta = {};
 		canReflect.setKeyValue(obj, metaSymbol, meta);
 	}
-
-	return meta;
-};
-
-// getHandlers returns a KeyTree used for event handling.
-// `handlers` will be on the `can.meta` symbol on the object.
-function getHandlers(obj) {
-	var meta = ensureMeta(obj);
-
 	var handlers = meta.handlers;
 	if (!handlers) {
 		// Handlers are organized by:
@@ -39,22 +30,88 @@ function getHandlers(obj) {
 				if (obj._eventSetup) {
 					obj._eventSetup();
 				}
+				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [true]);
 			},
 			onEmpty: function() {
 				if (obj._eventTeardown) {
 					obj._eventTeardown();
 				}
+				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [false]);
 			}
 		});
 	}
-	return handlers;
+	var lifecycleHandlers = meta.lifecycleHandlers;
+	if (!lifecycleHandlers) {
+		// lifecycleHandlers are organized by:
+		// queue name - mutate, queue, etc
+		// lifecycleHandlers - the lifecycleHandlers.
+		lifecycleHandlers = meta.lifecycleHandlers = new KeyTree([Object, Array]);
+	}
+
+	return meta;
+};
+
+// getHandlers returns a KeyTree used for event handling.
+// `handlers` will be on the `can.meta` symbol on the object.
+// Ensure the "obj" passed as an argument has an object on @@can.meta
+var ensureMeta = function ensureMeta(obj) {
+	var metaSymbol = canSymbol.for("can.meta");
+	var meta = obj[metaSymbol];
+
+	if (!meta) {
+		meta = {};
+		canReflect.setKeyValue(obj, metaSymbol, meta);
+	}
+	var handlers = meta.handlers;
+	if (!handlers) {
+		// Handlers are organized by:
+		// event name - the type of event bound to
+		// binding type - "event" for things that expect an event object (legacy), "onKeyValue" for reflective bindings.
+		// queue name - mutate, queue, etc
+		// handlers - the handlers.
+		handlers = meta.handlers = new KeyTree([Object, Object, Object, Array], {
+			onFirst: function() {
+				if (obj._eventSetup) {
+					obj._eventSetup();
+				}
+				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [true]);
+			},
+			onEmpty: function() {
+				if (obj._eventTeardown) {
+					obj._eventTeardown();
+				}
+				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [false]);
+			}
+		});
+	}
+	var lifecycleHandlers = meta.lifecycleHandlers;
+	if (!lifecycleHandlers) {
+		// lifecycleHandlers are organized by:
+		// queue name - mutate, queue, etc
+		// lifecycleHandlers - the lifecycleHandlers.
+		lifecycleHandlers = meta.lifecycleHandlers = new KeyTree([Object, Array]);
+	}
+
+	return meta;
+};
+
+// getHandlers returns a KeyTree used for event handling.
+// `handlers` will be on the `can.meta` symbol on the object.
+function getHandlers(obj) {
+	return ensureMeta(obj).handlers;
+}
+
+// getLifecycleHandlers returns a KeyTree used for handling first binding and last unbinding events
+// `lifecycleHandlers` will be on the `can.meta` symbol on the object.
+function getLifecycleHandlers(obj) {
+	return ensureMeta(obj).lifecycleHandlers;
 }
 
 // These are the properties we are going to add to objects
 var props = {
 	dispatch: function(event, args) {
 		//!steal-remove-start
-		if (arguments.length > 2) {
+		if (arguments.length > 4) {
 			canDev.warn('Arguments to dispatch should be an array, not multiple arguments.');
 			args = Array.prototype.slice.call(arguments, 1);
 		}
@@ -91,7 +148,7 @@ var props = {
 			}
 			//!steal-remove-end
 
-			var handlers = getHandlers(this);
+			var handlers = meta.handlers;
 			var handlersByType = handlers.getNode([event.type]);
 			if (handlersByType) {
 				queues.batch.start();
@@ -175,13 +232,22 @@ props.off = function(eventName, handler, queue) {
 	}
 };
 
-// The symbols we'll add to bojects
+// The symbols we'll add to objects
 var symbols = {
 	"can.onKeyValue": function(key, handler, queueName) {
 		getHandlers(this).add([key, "onKeyValue", queueName || "mutate", handler]);
 	},
 	"can.offKeyValue": function(key, handler, queueName) {
 		getHandlers(this).delete([key, "onKeyValue", queueName || "mutate", handler]);
+	},
+	"can.onBoundChange": function(handler, queueName) {
+		getLifecycleHandlers(this).add([queueName || "mutate", handler]);
+	},
+	"can.offBoundChange": function(handler, queueName) {
+		getLifecycleHandlers(this).delete([queueName || "mutate", handler]);
+	},
+	"can.isBound": function() {
+		return getHandlers(this).size() > 0;
 	}
 };
 
