@@ -169,7 +169,15 @@ var props = {
 		getHandlers(this).add([key, "event", queueName || "mutate", handler]);
 	},
 	removeEventListener: function(key, handler, queueName) {
-		if (!handler && !queueName) {
+		if(key === undefined) {
+			// This isn't super fast, but this pattern isn't used much.
+			// We could re-arrange the tree so it would be faster.
+			var handlers = getHandlers(this);
+			var keyHandlers = handlers.getNode([]);
+			Object.keys(keyHandlers).forEach(function(key){
+				handlers.delete([key,"event"]);
+			});
+		} else if (!handler && !queueName) {
 			getHandlers(this).delete([key, "event"]);
 		} else if (!handler) {
 			getHandlers(this).delete([key, "event", queueName || "mutate"]);

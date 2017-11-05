@@ -3,6 +3,7 @@ var eventQueue = require("can-event-queue");
 var queues = require("can-queues");
 var domEvents = require("can-util/dom/events/events");
 var canSymbol = require("can-symbol");
+var canReflect = require("can-reflect");
 
 QUnit.module('can-event-queue',{
 	setup: function(){ },
@@ -127,7 +128,7 @@ if(typeof document !== "undefined") {
 	});
 }
 
-QUnit.test("empty unbind", function(){
+QUnit.test("handler-less unbind", function(){
 	var obj = eventQueue({});
 
 	obj.addEventListener("first", function(){});
@@ -137,6 +138,24 @@ QUnit.test("empty unbind", function(){
 	QUnit.equal(handlers.get(["first"]).length, 2, "2 first handlers");
 	obj.removeEventListener("first");
 	QUnit.equal(handlers.get(["first"]).length, 0, "first handlers removed");
+});
+QUnit.test("key-less unbind", function(){
+	var obj = eventQueue({});
+
+	obj.addEventListener("first", function(){});
+	obj.addEventListener("first", function(){},"notify");
+	obj.addEventListener("second", function(){});
+	obj.addEventListener("second", function(){},"notify");
+
+	canReflect.onKeyValue(obj,"first", function(){});
+	canReflect.onKeyValue(obj,"first", function(){},"notify");
+	canReflect.onKeyValue(obj,"second", function(){});
+	canReflect.onKeyValue(obj,"second", function(){},"notify");
+
+	var handlers = obj[canSymbol.for("can.meta")].handlers;
+	QUnit.equal(handlers.get([]).length, 8, "2 first handlers");
+	obj.removeEventListener();
+	QUnit.equal(handlers.get([]).length, 4, "first handlers removed");
 });
 
 QUnit.test("@@can.isBound symbol", function() {

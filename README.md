@@ -2,7 +2,9 @@
 
 [![Build Status](https://travis-ci.org/canjs/can-event-queue.svg?branch=master)](https://travis-ci.org/canjs/can-event-queue)
 
-`can-event-queue` mixes in event binding and dispatching methods that use [can-queues](../can-queues).
+`can-event-queue` mixes in event binding and dispatching methods that
+use [can-queues](../can-queues).  This adds legacy binding methods `addEventListener`
+and `removeEventListener`.  This package should not be used for new packages.
 
 
 ## Use
