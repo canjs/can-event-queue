@@ -90,6 +90,8 @@ var props = {
 				};
 			}
 
+			var meta = ensureMeta(this);
+
 			//!steal-remove-start
 			if (!event.reasonLog) {
 				event.reasonLog = [canReflect.getName(this), "dispatched", '"' + event + '"', "with"].concat(args);
@@ -102,7 +104,6 @@ var props = {
 				};
 			}
 
-			var meta = ensureMeta(this);
 			if (typeof meta._log === "function") {
 				meta._log.call(this, event, args);
 			}
