@@ -3,7 +3,7 @@ var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
 var queues = require("can-queues");
 
-var metaSymbol = canSymbol.for("can.meta")
+var metaSymbol = canSymbol.for("can.meta");
 
 function ensureMeta(obj) {
     var meta = obj[metaSymbol];
@@ -19,6 +19,7 @@ function ensureMeta(obj) {
         // lifecycleHandlers - the lifecycleHandlers.
         meta.lifecycleHandlers = new KeyTree([Object, Array]);
     }
+    return meta;
 }
 
 module.exports = function(obj){
@@ -31,7 +32,7 @@ module.exports = function(obj){
     		ensureMeta(this).lifecycleHandlers.delete([queueName || "mutate", handler]);
     	},
         "can.dispatchBoundChange": function(obj, isBound){
-            queues.enqueueByQueue(ensureMeta(this).lifecycleHandlers.getNode([]), obj, [isBound],{});
+            queues.enqueueByQueue(ensureMeta(this).lifecycleHandlers.getNode([]), this, [obj, isBound]);
         }
     });
 };

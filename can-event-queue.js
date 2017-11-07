@@ -8,8 +8,13 @@ var KeyTree = require("can-key-tree");
 var domEvents = require("can-util/dom/events/events");
 
 var metaSymbol = canSymbol.for("can.meta"),
-	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchBoundChange");
-
+	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchBoundChange"),
+	onKeyValueSymbol = canSymbol.for("can.onKeyValue"),
+	offKeyValueSymbol = canSymbol.for("can.offKeyValue"),
+	onEventSymbol = canSymbol.for("can.onEvent"),
+	offEventSymbol = canSymbol.for("can.offEvent"),
+	onValueSymbol = canSymbol.for("can.onValue"),
+	offValueSymbol = canSymbol.for("can.offValue");
 
 var eventQueue;
 
@@ -58,14 +63,6 @@ var ensureMeta = function ensureMeta(obj) {
 
 	return meta;
 };
-
-
-
-// getLifecycleHandlers returns a KeyTree used for handling first binding and last unbinding events
-// `lifecycleHandlers` will be on the `can.meta` symbol on the object.
-function getLifecycleHandlers(obj) {
-	return ensureMeta(obj).lifecycleHandlers;
-}
 
 // These are the properties we are going to add to objects
 var props = {
@@ -200,63 +197,56 @@ var props = {
 			listenHandlers.delete([]);
 		}
 		return this;
+	},
+	on: function(eventName, handler, queue) {
+		var listenWithDOM = domEvents.canAddEventListener.call(this);
+		if (listenWithDOM) {
+			var method = typeof handler === "string" ? "addDelegateListener" : "addEventListener";
+			domEvents[method].call(this, eventName, handler, queue);
+		} else {
+			if ("addEventListener" in this) {
+				this.addEventListener(eventName, handler, queue);
+			} else if (this[onKeyValueSymbol]) {
+				canReflect.onKeyValue(this, eventName, handler, queue);
+			} else if (this[onEventSymbol]) {
+				this[onEventSymbol](eventName, handler, queue);
+			} else {
+				if (!eventName && this[onValueSymbol]) {
+					canReflect.onValue(this, handler);
+				} else {
+					throw new Error("can-event-queue: Unable to bind " + eventName);
+				}
+			}
+		}
+	},
+	off: function(eventName, handler, queue) {
+
+		var listenWithDOM = domEvents.canAddEventListener.call(this);
+		if (listenWithDOM) {
+			var method = typeof handler === "string" ? "removeDelegateListener" : "removeEventListener";
+			domEvents[method].call(this, eventName, handler, queue);
+		} else {
+
+			if ("removeEventListener" in this) {
+				this.removeEventListener(eventName, handler, queue);
+			} else if (this[offKeyValueSymbol]) {
+				canReflect.offKeyValue(this, eventName, handler, queue);
+			} else if (this[offEventSymbol]) {
+				this[offEventSymbol](eventName, handler, queue);
+			} else {
+				if (!eventName && this[offValueSymbol]) {
+					canReflect.offValue(this, handler);
+				} else {
+					throw new Error("can-event-queue: Unable to unbind " + eventName);
+				}
+
+			}
+		}
 	}
 };
 props.bind = props.addEventListener;
 props.unbind = props.removeEventListener;
 
-var onKeyValueSymbol = canSymbol.for("can.onKeyValue"),
-	offKeyValueSymbol = canSymbol.for("can.offKeyValue"),
-	onEventSymbol = canSymbol.for("can.onEvent"),
-	offEventSymbol = canSymbol.for("can.offEvent"),
-	onValueSymbol = canSymbol.for("can.onValue"),
-	offValueSymbol = canSymbol.for("can.offValue");
-
-props.on = function(eventName, handler, queue) {
-	var listenWithDOM = domEvents.canAddEventListener.call(this);
-	if (listenWithDOM) {
-		var method = typeof handler === "string" ? "addDelegateListener" : "addEventListener";
-		domEvents[method].call(this, eventName, handler, queue);
-	} else {
-		if ("addEventListener" in this) {
-			this.addEventListener(eventName, handler, queue);
-		} else if (this[onKeyValueSymbol]) {
-			canReflect.onKeyValue(this, eventName, handler, queue);
-		} else if (this[onEventSymbol]) {
-			this[onEventSymbol](eventName, handler, queue);
-		} else {
-			if (!eventName && this[onValueSymbol]) {
-				canReflect.onValue(this, handler);
-			} else {
-				throw new Error("can-event-queue: Unable to bind " + eventName);
-			}
-		}
-	}
-};
-props.off = function(eventName, handler, queue) {
-
-	var listenWithDOM = domEvents.canAddEventListener.call(this);
-	if (listenWithDOM) {
-		var method = typeof handler === "string" ? "removeDelegateListener" : "removeEventListener";
-		domEvents[method].call(this, eventName, handler, queue);
-	} else {
-
-		if ("removeEventListener" in this) {
-			this.removeEventListener(eventName, handler, queue);
-		} else if (this[offKeyValueSymbol]) {
-			canReflect.offKeyValue(this, eventName, handler, queue);
-		} else if (this[offEventSymbol]) {
-			this[offEventSymbol](eventName, handler, queue);
-		} else {
-			if (!eventName && this[offValueSymbol]) {
-				canReflect.offValue(this, handler);
-			} else {
-				throw new Error("can-event-queue: Unable to unbind " + eventName);
-			}
-
-		}
-	}
-};
 
 // The symbols we'll add to objects
 var symbols = {
@@ -276,8 +266,7 @@ eventQueue = function(obj) {
 	// add properties
 	assign(obj, props);
 	// add symbols
-	canReflect.assignSymbols(obj, symbols);
-	return obj;
+	return canReflect.assignSymbols(obj, symbols);
 };
 
 
@@ -291,6 +280,7 @@ function defineNonEnumerable(obj, prop, value) {
 }
 
 assign(eventQueue, props);
+
 defineNonEnumerable(eventQueue, "start", function() {
 	console.warn("use can-queues.batch.start()");
 	queues.batch.start();

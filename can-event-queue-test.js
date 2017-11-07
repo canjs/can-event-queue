@@ -4,6 +4,7 @@ var queues = require("can-queues");
 var domEvents = require("can-util/dom/events/events");
 var canSymbol = require("can-symbol");
 var canReflect = require("can-reflect");
+var addBoundChange = require("./bound-change/bound-change");
 
 QUnit.module('can-event-queue',{
 	setup: function(){ },
@@ -169,16 +170,13 @@ QUnit.test("@@can.isBound symbol", function() {
 
 	obj.off("first", handler);
 	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound after removing listener");
-
-	obj[canSymbol.for("can.onBoundChange")](handler);
-	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound after adding bound change listener");
-
 });
 
 test("Events when object is bound/unbound", function() {
-	expect(2);
+	expect(1);
 	var Type = function(){};
 	eventQueue(Type.prototype);
+	addBoundChange( Type );
 
 	var obj1 = new Type(),
 		obj2 = new Type();
