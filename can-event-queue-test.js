@@ -177,27 +177,36 @@ QUnit.test("@@can.isBound symbol", function() {
 
 test("Events when object is bound/unbound", function() {
 	expect(2);
-	var obj = eventQueue({});
-	var trueCaseHit = false;
-	var metaHandler = function(newVal) {
-		if(!trueCaseHit) {
-			QUnit.ok(newVal, "new value reflects other events bound");
-			trueCaseHit = true;
-		} else {
-			QUnit.ok(!newVal, "new value reflects all events unbound");
-		}
+	var Type = function(){};
+	eventQueue(Type.prototype);
+
+	var obj1 = new Type(),
+		obj2 = new Type();
+
+	var calls = [];
+	var metaHandler = function(obj, newVal) {
+		calls.push([obj, newVal]);
 	};
 	var handler = function() {};
 
-	obj[canSymbol.for("can.onBoundChange")](metaHandler);
+	Type[canSymbol.for("can.onBoundChange")](metaHandler);
 
-	obj.on("first", handler);
-	obj.off("first", handler);
+	obj1.on("first", handler);
+	obj1.off("first", handler);
+	obj2.on("second", handler);
+	obj2.off("second", handler);
 
 	// Sanity check.  Ensure that no more events fire after offBoundChange
-	obj[canSymbol.for("can.offBoundChange")](metaHandler);
-	obj.on("first", handler);
-	obj.off("first", handler);
+	Type[canSymbol.for("can.offBoundChange")](metaHandler);
+	obj1.on("first", handler);
+	obj1.off("first", handler);
+
+	QUnit.deepEqual(calls,[
+		[obj1,true],
+		[obj1,false],
+		[obj2,true],
+		[obj2,false]
+	]);
 });
 
 
