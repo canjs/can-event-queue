@@ -7,49 +7,8 @@ var KeyTree = require("can-key-tree");
 
 var domEvents = require("can-util/dom/events/events");
 
+var eventQueue;
 
-
-// Ensure the "obj" passed as an argument has an object on @@can.meta
-var ensureMeta = function ensureMeta(obj) {
-	var metaSymbol = canSymbol.for("can.meta");
-	var meta = obj[metaSymbol];
-
-	if (!meta) {
-		meta = {};
-		canReflect.setKeyValue(obj, metaSymbol, meta);
-	}
-	var handlers = meta.handlers;
-	if (!handlers) {
-		// Handlers are organized by:
-		// event name - the type of event bound to
-		// binding type - "event" for things that expect an event object (legacy), "onKeyValue" for reflective bindings.
-		// queue name - mutate, queue, etc
-		// handlers - the handlers.
-		handlers = meta.handlers = new KeyTree([Object, Object, Object, Array], {
-			onFirst: function() {
-				if (obj._eventSetup) {
-					obj._eventSetup();
-				}
-				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [true]);
-			},
-			onEmpty: function() {
-				if (obj._eventTeardown) {
-					obj._eventTeardown();
-				}
-				queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [false]);
-			}
-		});
-	}
-	var lifecycleHandlers = meta.lifecycleHandlers;
-	if (!lifecycleHandlers) {
-		// lifecycleHandlers are organized by:
-		// queue name - mutate, queue, etc
-		// lifecycleHandlers - the lifecycleHandlers.
-		lifecycleHandlers = meta.lifecycleHandlers = new KeyTree([Object, Array]);
-	}
-
-	return meta;
-};
 
 // getHandlers returns a KeyTree used for event handling.
 // `handlers` will be on the `can.meta` symbol on the object.
@@ -84,12 +43,16 @@ var ensureMeta = function ensureMeta(obj) {
 			}
 		});
 	}
-	var lifecycleHandlers = meta.lifecycleHandlers;
-	if (!lifecycleHandlers) {
+
+	if (!meta.lifecycleHandlers) {
 		// lifecycleHandlers are organized by:
 		// queue name - mutate, queue, etc
 		// lifecycleHandlers - the lifecycleHandlers.
-		lifecycleHandlers = meta.lifecycleHandlers = new KeyTree([Object, Array]);
+		meta.lifecycleHandlers = new KeyTree([Object, Array]);
+	}
+
+	if (!meta.listenHandlers) {
+		meta.listenHandlers = new KeyTree([Map, Object, Array]);
 	}
 
 	return meta;
@@ -184,8 +147,65 @@ var props = {
 		} else {
 			getHandlers(this).delete([key, "event", queueName || "mutate", handler]);
 		}
+	},
+	one: function(event, handler) {
+		// Unbind the listener after it has been executed
+		var one = function() {
+			eventQueue.off.call(this, event, one);
+			return handler.apply(this, arguments);
+		};
+
+		// Bind the altered listener
+		eventQueue.on.call(this, event, one);
+		return this;
+	},
+	listenTo: function (other, event, handler) {
+		// Initialize event cache
+		ensureMeta(this).listenHandlers.add([other, event, handler]);
+
+		eventQueue.on.call(other, event, handler);
+	},
+	stopListening: function (other, event, handler) {
+		var listenHandlers = ensureMeta(this).listenHandlers;
+
+		function stopHandler(other, event, handler) {
+			eventQueue.off.call(other, event, handler);
+		}
+		function stopEvent(other, event) {
+			listenHandlers.get([other, event]).forEach(function(handler){
+				stopHandler(other, event, handler);
+			});
+		}
+		function stopOther(other) {
+			canReflect.eachKey( listenHandlers.getNode([other]), function(handlers, event){
+				stopEvent(other, event);
+			});
+		}
+
+		if(other) {
+			if(event) {
+				if(handler) {
+					stopHandler(other, event, handler);
+					listenHandlers.delete([other, event, handler]);
+				} else {
+					stopEvent(other, event);
+					listenHandlers.delete([other, event]);
+				}
+			} else {
+				stopOther(other);
+				listenHandlers.delete([other]);
+			}
+		} else {
+			canReflect.eachKey( listenHandlers.getNode([]), function(events, other){
+				stopOther(other);
+			});
+			listenHandlers.delete([]);
+		}
+		return this;
 	}
 };
+props.bind = props.addEventListener;
+props.unbind = props.removeEventListener;
 
 var onKeyValueSymbol = canSymbol.for("can.onKeyValue"),
 	offKeyValueSymbol = canSymbol.for("can.offKeyValue"),
@@ -210,7 +230,7 @@ props.on = function(eventName, handler, queue) {
 			if (!eventName && this[onValueSymbol]) {
 				canReflect.onValue(this, handler);
 			} else {
-				throw new Error("can-control: Unable to bind " + eventName);
+				throw new Error("can-event-queue: Unable to bind " + eventName);
 			}
 		}
 	}
@@ -260,7 +280,7 @@ var symbols = {
 };
 
 // The actual eventQueue mixin function
-var eventQueue = function(obj) {
+eventQueue = function(obj) {
 	// add properties
 	assign(obj, props);
 	// add symbols

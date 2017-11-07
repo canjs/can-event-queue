@@ -199,3 +199,85 @@ test("Events when object is bound/unbound", function() {
 	obj.on("first", handler);
 	obj.off("first", handler);
 });
+
+
+test('listenTo and stopListening', 9, function () {
+	var parent = eventQueue({});
+	var child1 = eventQueue({});
+	var child2 = eventQueue({});
+	var change1WithId = 0;
+
+	parent.listenTo(child1, 'change', function () {
+		change1WithId++;
+		if (change1WithId === 1) {
+			ok(true, 'child 1 handler with id called');
+		} else {
+			ok(false, 'child 1 handler with id should only be called once');
+		}
+	});
+
+	child1.bind('change', function () {
+		ok(true, 'child 1 handler without id called');
+	});
+	var foo1WidthId = 0;
+	parent.listenTo(child1, 'foo', function () {
+		foo1WidthId++;
+		if (foo1WidthId === 1) {
+			ok(true, 'child 1 foo handler with id called');
+		} else {
+			ok(false, 'child 1 foo handler should not be called twice');
+		}
+	});
+	// child2 stuff
+	(function () {
+		var okToCall = true;
+		parent.listenTo(child2, 'change', function () {
+			ok(okToCall, 'child 2 handler with id called');
+			okToCall = false;
+		});
+	}());
+	child2.bind('change', function () {
+		ok(true, 'child 2 handler without id called');
+	});
+	parent.listenTo(child2, 'foo', function () {
+		ok(true, 'child 2 foo handler with id called');
+	});
+
+
+	eventQueue.dispatch.call(child1, 'change');
+	eventQueue.dispatch.call(child1, 'foo');
+	eventQueue.dispatch.call(child2, 'change');
+	eventQueue.dispatch.call(child2, 'foo');
+
+	parent.stopListening(child1);
+	parent.stopListening(child2, 'change');
+	eventQueue.dispatch.call(child1, 'change');
+	eventQueue.dispatch.call(child1, 'foo');
+	eventQueue.dispatch.call(child2, 'change');
+	eventQueue.dispatch.call(child2, 'foo');
+});
+test('stopListening on something you\'ve never listened to ', function () {
+	var parent = eventQueue({});
+	var child = eventQueue({});
+	parent.listenTo({
+		addEventListener: function(){}
+	}, 'foo');
+	parent.stopListening(child, 'change');
+	ok(true, 'did not error');
+});
+
+test('One will listen to an event once, then unbind', function() {
+	var mixin = 0;
+
+	// Mixin call
+	var obj = eventQueue({});
+	obj.one('mixin', function() {
+		mixin++;
+	});
+
+	obj.dispatch('mixin');
+	obj.dispatch('mixin');
+	obj.dispatch('mixin');
+	equal(mixin, 1, 'one should only fire a handler once (mixin)');
+
+});
