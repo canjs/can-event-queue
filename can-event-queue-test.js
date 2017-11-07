@@ -4,7 +4,6 @@ var queues = require("can-queues");
 var domEvents = require("can-util/dom/events/events");
 var canSymbol = require("can-symbol");
 var canReflect = require("can-reflect");
-var addBoundChange = require("./bound-change/bound-change");
 
 QUnit.module('can-event-queue',{
 	setup: function(){ },
@@ -172,40 +171,7 @@ QUnit.test("@@can.isBound symbol", function() {
 	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound after removing listener");
 });
 
-test("Events when object is bound/unbound", function() {
-	expect(1);
-	var Type = function(){};
-	eventQueue(Type.prototype);
-	addBoundChange( Type );
 
-	var obj1 = new Type(),
-		obj2 = new Type();
-
-	var calls = [];
-	var metaHandler = function(obj, newVal) {
-		calls.push([obj, newVal]);
-	};
-	var handler = function() {};
-
-	Type[canSymbol.for("can.onBoundChange")](metaHandler);
-
-	obj1.on("first", handler);
-	obj1.off("first", handler);
-	obj2.on("second", handler);
-	obj2.off("second", handler);
-
-	// Sanity check.  Ensure that no more events fire after offBoundChange
-	Type[canSymbol.for("can.offBoundChange")](metaHandler);
-	obj1.on("first", handler);
-	obj1.off("first", handler);
-
-	QUnit.deepEqual(calls,[
-		[obj1,true],
-		[obj1,false],
-		[obj2,true],
-		[obj2,false]
-	]);
-});
 
 
 test('listenTo and stopListening', 9, function () {
@@ -288,3 +254,6 @@ test('One will listen to an event once, then unbind', function() {
 	equal(mixin, 1, 'one should only fire a handler once (mixin)');
 
 });
+
+
+require("./type-events/type-events-test");

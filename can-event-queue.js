@@ -8,7 +8,7 @@ var KeyTree = require("can-key-tree");
 var domEvents = require("can-util/dom/events/events");
 
 var metaSymbol = canSymbol.for("can.meta"),
-	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchBoundChange"),
+	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchInstanceBoundChange"),
 	onKeyValueSymbol = canSymbol.for("can.onKeyValue"),
 	offKeyValueSymbol = canSymbol.for("can.offKeyValue"),
 	onEventSymbol = canSymbol.for("can.onEvent"),

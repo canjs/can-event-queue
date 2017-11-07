@@ -14,10 +14,10 @@ function ensureMeta(obj) {
     }
 
     if (!meta.lifecycleHandlers) {
-        // lifecycleHandlers are organized by:
-        // queue name - mutate, queue, etc
-        // lifecycleHandlers - the lifecycleHandlers.
         meta.lifecycleHandlers = new KeyTree([Object, Array]);
+    }
+    if (!meta.instancePatchesHandlers) {
+        meta.instancePatchesHandlers = new KeyTree([Object, Array]);
     }
     return meta;
 }
@@ -25,14 +25,23 @@ function ensureMeta(obj) {
 module.exports = function(obj){
 
     return canReflect.assignSymbols(obj,{
-        "can.onBoundChange": function(handler, queueName) {
+        "can.onInstanceBoundChange": function(handler, queueName) {
     		ensureMeta(this).lifecycleHandlers.add([queueName || "mutate", handler]);
     	},
-    	"can.offBoundChange": function(handler, queueName) {
+    	"can.offInstanceBoundChange": function(handler, queueName) {
     		ensureMeta(this).lifecycleHandlers.delete([queueName || "mutate", handler]);
     	},
-        "can.dispatchBoundChange": function(obj, isBound){
+        "can.dispatchInstanceBoundChange": function(obj, isBound){
             queues.enqueueByQueue(ensureMeta(this).lifecycleHandlers.getNode([]), this, [obj, isBound]);
+        },
+        "can.onInstancePatches": function(handler, queueName) {
+    		ensureMeta(this).instancePatchesHandlers.add([queueName || "mutate", handler]);
+    	},
+    	"can.offInstancePatches": function(handler, queueName) {
+    		ensureMeta(this).instancePatchesHandlers.delete([queueName || "mutate", handler]);
+    	},
+        "can.dispatchInstanceOnPatches": function(obj, isBound){
+            queues.enqueueByQueue(ensureMeta(this).instancePatchesHandlers.getNode([]), this, [obj, isBound]);
         }
     });
 };
