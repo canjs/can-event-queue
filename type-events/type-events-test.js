@@ -63,3 +63,31 @@ test("can.dispatchInstanceOnPatches", function() {
 		[obj1, [{type: "add",    key: "b", value: 1}]]
 	]);
 });
+
+test("can.dispatchInstanceOnPatches with patches on event object", function() {
+	expect(1);
+	var Type = function(){};
+	eventQueue(Type.prototype);
+	addTypeEvents( Type );
+    var calls = [];
+    var handler = function(obj, patches){
+    	calls.push([obj, patches]);
+    };
+    Type[canSymbol.for("can.onInstancePatches")](handler);
+
+
+    var obj1 = new Type();
+	obj1.dispatch({
+		type: "b",
+		patches: [{type: "add",    key: "b", value: 1}]
+	});
+    Type[canSymbol.for("can.offInstancePatches")](handler);
+	obj1.dispatch({
+		type: "b",
+		patches: [{type: "add",    key: "b", value: 1}]
+	});
+
+	QUnit.deepEqual(calls,[
+		[obj1, [{type: "add",    key: "b", value: 1}]]
+	]);
+});

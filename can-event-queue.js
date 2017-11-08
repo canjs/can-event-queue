@@ -9,6 +9,7 @@ var domEvents = require("can-util/dom/events/events");
 
 var metaSymbol = canSymbol.for("can.meta"),
 	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchInstanceBoundChange"),
+	dispatchInstanceOnPatchesSymbol = canSymbol.for("can.dispatchInstanceOnPatches"),
 	onKeyValueSymbol = canSymbol.for("can.onKeyValue"),
 	offKeyValueSymbol = canSymbol.for("can.offKeyValue"),
 	onEventSymbol = canSymbol.for("can.onEvent"),
@@ -105,20 +106,27 @@ var props = {
 				meta._log.call(this, event, args);
 			}
 			//!steal-remove-end
-
 			var handlers = meta.handlers;
 			var handlersByType = handlers.getNode([event.type]);
-			if (handlersByType) {
+			var dispatchPatches = event.patches && this.constructor[dispatchInstanceOnPatchesSymbol];
+			var batch = dispatchPatches || handlersByType;
+			if ( batch ) {
 				queues.batch.start();
+			}
+			if(handlersByType) {
 				if (handlersByType.onKeyValue) {
 					queues.enqueueByQueue(handlersByType.onKeyValue, this, args, event.makeMeta, event.reasonLog);
 				}
 				if (handlersByType.event) {
-
 					event.batchNum = queues.batch.number();
 					var eventAndArgs = [event].concat(args);
 					queues.enqueueByQueue(handlersByType.event, this, eventAndArgs, event.makeMeta, event.reasonLog);
 				}
+			}
+			if(dispatchPatches) {
+				this.constructor[dispatchInstanceOnPatchesSymbol](this, event.patches);
+			}
+			if ( batch ) {
 				queues.batch.stop();
 			}
 		}
