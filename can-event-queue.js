@@ -92,7 +92,7 @@ var props = {
 
 			//!steal-remove-start
 			if (!event.reasonLog) {
-				event.reasonLog = [canReflect.getName(this), "dispatched", '"' + event + '"', "with"].concat(args);
+				event.reasonLog = [canReflect.getName(this), "dispatched", '"' + event.type + '"', "with"].concat(args);
 			}
 			if (!event.makeMeta) {
 				event.makeMeta = function makeMeta(handler) {

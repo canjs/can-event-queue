@@ -40,8 +40,8 @@ module.exports = function(obj){
     	"can.offInstancePatches": function(handler, queueName) {
     		ensureMeta(this).instancePatchesHandlers.delete([queueName || "mutate", handler]);
     	},
-        "can.dispatchInstanceOnPatches": function(obj, isBound){
-            queues.enqueueByQueue(ensureMeta(this).instancePatchesHandlers.getNode([]), this, [obj, isBound]);
+        "can.dispatchInstanceOnPatches": function(obj, patches){
+            queues.enqueueByQueue(ensureMeta(this).instancePatchesHandlers.getNode([]), this, [obj, patches]);
         }
     });
 };
