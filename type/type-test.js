@@ -1,7 +1,7 @@
 var QUnit = require('steal-qunit');
-var eventQueue = require("can-event-queue");
+var eventQueue = require("../map/legacy/legacy");
 var canSymbol = require("can-symbol");
-var addTypeEvents = require("./type-events");
+var addTypeEvents = require("./type");
 
 QUnit.module('can-event-queue/type-events',{
 	setup: function(){ },
