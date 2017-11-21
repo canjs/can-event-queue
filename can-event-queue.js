@@ -1,2 +1,2 @@
-console.warn("import can-event-queue/map/map instead.");
-module.exports = require("./map/map");
+console.warn("import can-event-queue/map/legacy/legacy instead.");
+module.exports = require("./map/legacy/legacy");
