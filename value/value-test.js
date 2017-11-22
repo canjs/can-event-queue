@@ -32,6 +32,20 @@ QUnit.test("basics", function() {
 	);
 });
 
+QUnit.test("addHandlers takes optional callbacks argument", function(assert) {
+	var obj = {};
+	var callbacks = {
+		onFirst: function() {},
+		onEmpty: function() {}
+	};
+
+	valueEventBindings.addHandlers(obj, callbacks);
+	assert.equal(
+		obj.handlers.callbacks,
+		callbacks
+	);
+});
+
 skipProductionTest("getWhatIChange", function(assert) {
 	var getChangesSymbol = canSymbol.for("can.getChangesDependencyRecord");
 	var observable = valueEventBindings(valueEventBindings.addHandlers({}));
