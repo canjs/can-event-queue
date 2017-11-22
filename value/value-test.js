@@ -36,8 +36,9 @@ skipProductionTest("getWhatIChange", function(assert) {
 	var getChangesSymbol = canSymbol.for("can.getChangesDependencyRecord");
 	var observable = valueEventBindings(valueEventBindings.addHandlers({}));
 
-	var getWhatIChange = observable[canSymbol.for("can.getWhatIChange")]
-		.bind(observable);
+	var getWhatIChange = observable[canSymbol.for("can.getWhatIChange")].bind(
+		observable
+	);
 
 	assert.equal(
 		typeof getWhatIChange(),
@@ -70,7 +71,7 @@ skipProductionTest("getWhatIChange", function(assert) {
 	var whatIChange = getWhatIChange();
 	assert.deepEqual(
 		whatIChange.mutate,
-	  { valueDependencies: new Set([a, b]) },
+		{ valueDependencies: new Set([a, b]) },
 		"domUI and mutate queues handlers deps should be included in .mutate"
 	);
 	assert.deepEqual(
