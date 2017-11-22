@@ -90,8 +90,9 @@ var mixinValueEventBindings = function(obj) {
 	return obj;
 };
 
-mixinValueEventBindings.addHandlers = function(obj) {
-	obj.handlers = new KeyTree([Object, Array]);
+// callbacks is optional
+mixinValueEventBindings.addHandlers = function(obj, callbacks) {
+	obj.handlers = new KeyTree([Object, Array], callbacks);
 	return obj;
 };
 
