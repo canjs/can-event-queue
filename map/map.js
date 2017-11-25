@@ -111,24 +111,10 @@ var props = {
 
 	},
 	addEventListener: function(key, handler, queueName) {
-		ensureMeta(this).handlers.add([key, queueName || "mutate", handler]);
+		this[onKeyValueSymbol](key, handler, queueName);
 	},
 	removeEventListener: function(key, handler, queueName) {
-		if(key === undefined) {
-			// This isn't super fast, but this pattern isn't used much.
-			// We could re-arrange the tree so it would be faster.
-			var handlers = ensureMeta(this).handlers;
-			var keyHandlers = handlers.getNode([]);
-			Object.keys(keyHandlers).forEach(function(key){
-				handlers.delete([key]);
-			});
-		} else if (!handler && !queueName) {
-			ensureMeta(this).handlers.delete([key]);
-		} else if (!handler) {
-			ensureMeta(this).handlers.delete([key, queueName || "mutate"]);
-		} else {
-			ensureMeta(this).handlers.delete([key, queueName || "mutate", handler]);
-		}
+		this[offKeyValueSymbol](key, handler, queueName);
 	},
 	one: function(event, handler) {
 		// Unbind the listener after it has been executed
@@ -191,12 +177,12 @@ var props = {
 			var method = typeof handler === "string" ? "addDelegateListener" : "addEventListener";
 			domEvents[method].call(this, eventName, handler, queue);
 		} else {
-			if ("addEventListener" in this) {
-				this.addEventListener(eventName, handler, queue);
-			} else if (this[onKeyValueSymbol]) {
-				canReflect.onKeyValue(this, eventName, handler, queue);
+			if (this[onKeyValueSymbol]) {
+				this[onKeyValueSymbol](eventName, handler, queue);
 			} else if (this[onEventSymbol]) {
 				this[onEventSymbol](eventName, handler, queue);
+			} else if ("addEventListener" in this) {
+				this.addEventListener(eventName, handler, queue);
 			} else {
 				if (!eventName && this[onValueSymbol]) {
 					canReflect.onValue(this, handler);
@@ -214,12 +200,12 @@ var props = {
 			domEvents[method].call(this, eventName, handler, queue);
 		} else {
 
-			if ("removeEventListener" in this) {
-				this.removeEventListener(eventName, handler, queue);
-			} else if (this[offKeyValueSymbol]) {
-				canReflect.offKeyValue(this, eventName, handler, queue);
+			if (this[offKeyValueSymbol]) {
+				this[offKeyValueSymbol](eventName, handler, queue);
 			} else if (this[offEventSymbol]) {
 				this[offEventSymbol](eventName, handler, queue);
+			} else if ("removeEventListener" in this) {
+				this.removeEventListener(eventName, handler, queue);
 			} else {
 				if (!eventName && this[offValueSymbol]) {
 					canReflect.offValue(this, handler);
@@ -239,7 +225,21 @@ var symbols = {
 		ensureMeta(this).handlers.add([key, queueName || "mutate", handler]);
 	},
 	"can.offKeyValue": function(key, handler, queueName) {
-		ensureMeta(this).handlers.delete([key, queueName || "mutate", handler]);
+		if(key === undefined) {
+			// This isn't super fast, but this pattern isn't used much.
+			// We could re-arrange the tree so it would be faster.
+			var handlers = ensureMeta(this).handlers;
+			var keyHandlers = handlers.getNode([]);
+			Object.keys(keyHandlers).forEach(function(key){
+				handlers.delete([key]);
+			});
+		} else if (!handler && !queueName) {
+			ensureMeta(this).handlers.delete([key]);
+		} else if (!handler) {
+			ensureMeta(this).handlers.delete([key, queueName || "mutate"]);
+		} else {
+			ensureMeta(this).handlers.delete([key, queueName || "mutate", handler]);
+		}
 	},
 	"can.isBound": function() {
 		return ensureMeta(this).handlers.size() > 0;
