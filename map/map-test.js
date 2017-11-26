@@ -240,3 +240,14 @@ test('One will listen to an event once, then unbind', function() {
 	equal(mixin, 1, 'one should only fire a handler once (mixin)');
 
 });
+
+QUnit.test("listenTo defaults to this if first arg is primitive", 1, function(){
+	var parent = mapEventBindings({});
+	parent.listenTo('foo', function(){
+		QUnit.ok(true, "dispatched foo");
+	});
+	parent.dispatch('foo');
+
+	parent.stopListening('foo');
+	parent.dispatch('foo');
+});

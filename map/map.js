@@ -129,11 +129,21 @@ var props = {
 	},
 	listenTo: function (other, event, handler) {
 		// Initialize event cache
+		if(canReflect.isPrimitive(other)) {
+			handler = event;
+			event = other;
+			other = this;
+		}
 		ensureMeta(this).listenHandlers.add([other, event, handler]);
 
 		mapBindings.on.call(other, event, handler);
 	},
 	stopListening: function (other, event, handler) {
+		if(canReflect.isPrimitive(other)) {
+			handler = event;
+			event = other;
+			other = this;
+		}
 		var listenHandlers = ensureMeta(this).listenHandlers;
 
 		function stopHandler(other, event, handler) {
