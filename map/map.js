@@ -112,9 +112,11 @@ var props = {
 	},
 	addEventListener: function(key, handler, queueName) {
 		this[onKeyValueSymbol](key, handler, queueName);
+		return this;
 	},
 	removeEventListener: function(key, handler, queueName) {
 		this[offKeyValueSymbol](key, handler, queueName);
+		return this;
 	},
 	one: function(event, handler) {
 		// Unbind the listener after it has been executed
@@ -137,6 +139,7 @@ var props = {
 		ensureMeta(this).listenHandlers.add([other, event, handler]);
 
 		mapBindings.on.call(other, event, handler);
+		return this;
 	},
 	stopListening: function (other, event, handler) {
 		if(canReflect.isPrimitive(other)) {
@@ -201,6 +204,7 @@ var props = {
 				}
 			}
 		}
+		return this;
 	},
 	off: function(eventName, handler, queue) {
 
@@ -225,6 +229,7 @@ var props = {
 
 			}
 		}
+		return this;
 	}
 };
 
