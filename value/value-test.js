@@ -35,10 +35,10 @@ QUnit.test("basics", function() {
 QUnit.test("onBound and onUnbound called", 2, function(assert) {
 	var obj = valueEventBindings({
 		onBound: function(){
-			QUnit.ok(true,"setup called")
+			assert.ok(true,"setup called");
 		},
 		onUnbound: function(){
-			QUnit.ok(true,"teardown called")
+			assert.ok(true,"teardown called");
 		}
 	});
 	var handler = function(){};
@@ -49,7 +49,7 @@ QUnit.test("onBound and onUnbound called", 2, function(assert) {
 
 skipProductionTest("getWhatIChange", function(assert) {
 	var getChangesSymbol = canSymbol.for("can.getChangesDependencyRecord");
-	var observable = valueEventBindings(valueEventBindings.addHandlers({}));
+	var observable = valueEventBindings({});
 
 	var getWhatIChange = observable[canSymbol.for("can.getWhatIChange")].bind(
 		observable
