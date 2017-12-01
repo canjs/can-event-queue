@@ -12,7 +12,7 @@ QUnit.module("can-event-queue/value", {
 });
 
 QUnit.test("basics", function() {
-	var observable = valueEventBindings(valueEventBindings.addHandlers({}));
+	var observable = valueEventBindings({});
 	var values = [];
 
 	canReflect.onValue(observable, function(newVal, oldVal) {
@@ -32,18 +32,19 @@ QUnit.test("basics", function() {
 	);
 });
 
-QUnit.test("addHandlers takes optional callbacks argument", function(assert) {
-	var obj = {};
-	var callbacks = {
-		onFirst: function() {},
-		onEmpty: function() {}
-	};
+QUnit.test("onBound and onUnbound called", 2, function(assert) {
+	var obj = valueEventBindings({
+		onBound: function(){
+			QUnit.ok(true,"setup called")
+		},
+		onUnbound: function(){
+			QUnit.ok(true,"teardown called")
+		}
+	});
+	var handler = function(){};
 
-	valueEventBindings.addHandlers(obj, callbacks);
-	assert.equal(
-		obj.handlers.callbacks,
-		callbacks
-	);
+	obj.on(handler);
+	obj.off(handler);
 });
 
 skipProductionTest("getWhatIChange", function(assert) {

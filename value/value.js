@@ -2,6 +2,7 @@ var queues = require("can-queues");
 var KeyTree = require("can-key-tree");
 var canReflect = require("can-reflect");
 var mergeDependencyRecords = require("./merge-dependency-records");
+var defineLazyValue = require("can-define-lazy-value");
 
 var properties = {
 	on: function(handler, queue) {
@@ -84,14 +85,30 @@ var symbols = {
 	}
 };
 
+function defineLazyHandlers(){
+	return new KeyTree([Object, Array], {
+		onFirst: this.onBound !== undefined && this.onBound.bind(this),
+		onEmpty: this.onUnbound !== undefined && this.onUnbound.bind(this)
+	});
+}
+
+/**
+ * @module {function} can-event-queue/value/value
+ * @parent can-event-queue
+ *
+ * @description Mixin methods and symbols to make this object or prototype object
+ * behave like a single-value observable.
+ */
 var mixinValueEventBindings = function(obj) {
 	canReflect.assign(obj, properties);
 	canReflect.assignSymbols(obj, symbols);
+	defineLazyValue(obj,"handlers",defineLazyHandlers, true);
 	return obj;
 };
 
 // callbacks is optional
 mixinValueEventBindings.addHandlers = function(obj, callbacks) {
+	console.warn("can-event-queue/value: Avoid using addHandlers. Add onBound and onUnbound methods instead.");
 	obj.handlers = new KeyTree([Object, Array], callbacks);
 	return obj;
 };
