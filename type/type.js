@@ -1,3 +1,55 @@
+/**
+ * @module {function} can-event-queue/type/type
+ * @parent can-event-queue
+ *
+ * @description Mixin methods and symbols to make a type constructor function able to
+ * broadcast changes in its instances.
+ *
+ * @signature `mixinTypeBindings( type )`
+ *
+ * Adds symbols and methods that make `type` work with the following [can-reflect] APIs:
+ *
+ * - [can-reflect/observe.onInstanceBoundChange] - Observe when instances are bound.
+ * - [can-reflect/observe.onInstancePatches] - Observe patche events on all instances.
+ *
+ * When `mixinTypeBindings` is called on an `Person` _type_ like:
+ *
+ * ```js
+ * var mixinTypeBindings = require("can-event-queue/type/type");
+ * var mixinLegacyMapBindings = require("can-event-queue/map/legacy/legacy");
+ *
+ * class Person {
+ *   constructor(data){
+ *     this.data = data;
+ *   }
+ * }
+ * mixinTypeBindings(Person);
+ * mixinLegacyMapBindings(Person.prototype);
+ *
+ * var me = new Person({first: "Justin", last: "Meyer"});
+ *
+ * // mixinTypeBindings allows you to listen to
+ * // when a person instance's bind stache changes
+ * canReflect.onInstanceBoundChange(Person, function(person, isBound){
+ *    console.log("isBound");
+ * });
+ *
+ * // mixinTypeBindings allows you to listen to
+ * // when a patch change happens.
+ * canReflect.onInstancePatches(Person, function(person, patches){
+ *    console.log(patches[0]);
+ * });
+ *
+ * me.on("name",function(ev, newVal, oldVal){}) //-> logs: "isBound"
+ *
+ * me.dispatch({
+ *   type: "first",
+ *   patches: [{type: "set", key: "first", value: "Ramiya"}]
+ * }, ["Ramiya","Justin"])
+ * //-> logs: {type: "set", key: "first", value: "Ramiya"}
+ * ```
+ * 
+ */
 var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");

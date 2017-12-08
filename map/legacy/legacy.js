@@ -27,17 +27,24 @@
  *
  * `mixinLegacyMapBindings` adds the following properties and symbols to the object:
  *
- * - [can-event-queue/value/value.on]
- * - [can-event-queue/value/value.off]
- * - [can-event-queue/value/value.can.dispatch]
- * - [can-event-queue/value/value.can.getWhatIChange]
- * - [can-event-queue/value/value.handlers]
+ * - [can-event-queue/map/legacy/legacy.dispatch]
+ * - [can-event-queue/map/legacy/legacy.on]
+ * - [can-event-queue/map/legacy/legacy.one]
+ * - [can-event-queue/map/legacy/legacy.off]
+ * - [can-event-queue/map/legacy/legacy.listenTo]
+ * - [can-event-queue/map/legacy/legacy.stopListening]
+ * - [can-event-queue/map/legacy/legacy.addEventListener]
+ * - [can-event-queue/map/legacy/legacy.removeEventListener]
+ * - [can-event-queue/map/legacy/legacy.can.onKeyValue]
+ * - [can-event-queue/map/legacy/legacy.can.offKeyValue]
+ * - [can-event-queue/map/legacy/legacy.can.isBound]
  *
- * When the object is bound to for the first time with `.on` or `@can.onValue`, it will look for an [can-event-queue/value/value.onBound]
- * function on the object and call it.
+ * Furthermore, `mixinLegacyMapBindings` looks for the following symbols on the object's `.constructor`
+ * property:
  *
- * When the object is has no more handlers, it will look for an [can-event-queue/value/value.onUnbound]
- * function on the object and call it.
+ * - `@can.dispatchInstanceBoundChange` - Called when the bind status of an instance changes.
+ * - `@can.dispatchInstanceOnPatches` - Called if [can-event-queue/map/legacy/legacy.dispatch] is called with `event.patches` as an array of
+ *   patches.
  */
 var canDev = require("can-util/js/dev/dev");
 var assign = require("can-util/js/assign/assign");
@@ -79,7 +86,7 @@ var ensureMeta = function ensureMeta(obj) {
 		// handlers - the handlers.
 		meta.handlers = new KeyTree([Object, Object, Object, Array], {
 			onFirst: function() {
-				if (obj._eventSetup) {
+				if (obj._eventSetup !== undefined) {
 					obj._eventSetup();
 				}
 				if(obj.constructor[dispatchBoundChangeSymbol]) {
@@ -88,7 +95,7 @@ var ensureMeta = function ensureMeta(obj) {
 				//queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [true]);
 			},
 			onEmpty: function() {
-				if (obj._eventTeardown) {
+				if (obj._eventTeardown !== undefined) {
 					obj._eventTeardown();
 				}
 				if(obj.constructor[dispatchBoundChangeSymbol]) {
@@ -242,7 +249,7 @@ var props = {
 	 *
 	 * @signature `obj.addEventListener(eventName, handler(event, ...) [,queueName] )`
 	 *
-	 * Add a event listener to an object.  Handlers attached by `.addEventListener` way get
+	 * Add a event listener to an object.  Handlers attached by `.addEventListener` get
 	 * called back with the [can-event-queue/map/legacy/legacy.dispatch]
 	 * `event` object and any arguments used to dispatch. [can-event-queue/map/legacy/legacy.can.onKeyValue] bindings do
 	 * not get the event object.
@@ -292,8 +299,7 @@ var props = {
 	 * @param {String} eventName The name of the event to remove. If not specified, all events are removed.
 	 * @param {Function} [handler] The handler that will be removed from the event. If not specified, all handlers for the event are removed.
 	 * @param {String} [queueName='mutate'] The name of the [can-queues] queue the handler was registered on. Defaults to `"mutate"`.
-	 * @return {Object} this
-	 * 
+	 * @return {Object} Returns the object `.removeEventListener` was called on.
 	 */
 	removeEventListener: function(key, handler, queueName) {
 		if(key === undefined) {
@@ -317,12 +323,24 @@ var props = {
 	 * @function can-event-queue/map/legacy/legacy.one one
 	 * @parent can-event-queue/map/legacy/legacy
 	 *
-	 * @signature `obj.one(event, handler)`
+	 * @description Register an event handler that gets called only once.
+	 *
+	 * @signature `obj.one(event, handler(event, args...) )`
 	 *
 	 * Adds a basic event listener that listens to an event once and only once.
 	 *
-	 * @param {String} event The name of the event to listen for.
-	 * @param {Function} handler The handler that will be executed to handle the event.
+	 * ```js
+	 * obj.one("prop", function(){
+	 *   console.log("prop dispatched");
+	 * })
+	 *
+	 * obj[canSymbol.for("prop")]("prop") //-> logs "prop dispatched"
+	 * obj[canSymbol.for("prop")]("prop")
+	 * ```
+	 *
+	 * @param {String} eventName The name of the event to listen to.
+	 * @param {Function} handler(event, args...) The handler that will be run when the
+	 *   event is dispached.
 	 * @return {Object} this
 	 */
 	one: function(event, handler) {
@@ -578,6 +596,29 @@ var symbols = {
 	/**
 	 * @function can-event-queue/map/legacy/legacy.can.onKeyValue @can.onKeyValue
 	 * @parent can-event-queue/map/legacy/legacy
+	 *
+	 * @description Register an event handler to be called when a
+	 * key value changes.
+	 *
+	 * @signature `canReflect.onKeyValue( obj, key, handler(newVal) [,queueName] )`
+	 *
+	 * Add a key change handler to an object.  Handlers attached by `.onKeyValue` get
+	 * called back with the new value of the `key`. Handlers attached with [can-event-queue/map/legacy/legacy.can.addEventListener]
+	 * get the event object.
+	 *
+	 * ```js
+	 * var mixinLegacyMapBindings = require("can-event-queue/map/legacy/legacy");
+	 *
+	 * var obj = mixinLegacyMapBindings({});
+	 *
+	 * canReflect.onKeyValue( obj, "prop", function(newPropValue){ ... });
+	 * ```
+	 *
+	 * @param {String} key The name of property to listen to changes in values.
+	 * @param {Function} handler(newVal, oldValue) The handler that will be called
+	 *   back with the new and old value of the key.
+	 * @param {String} [queueName='mutate'] The name of the [can-queues] queue the handler will called
+	 *   back within. Defaults to `"mutate"`.
 	 */
 	"can.onKeyValue": function(key, handler, queueName) {
 		ensureMeta(this).handlers.add([key, "onKeyValue", queueName || "mutate", handler]);
@@ -585,6 +626,22 @@ var symbols = {
 	/**
 	 * @function can-event-queue/map/legacy/legacy.can.offKeyValue @can.offKeyValue
 	 * @parent can-event-queue/map/legacy/legacy
+	 *
+	 * @description Unregister an event handler to be called when an event is dispatched.
+	 *
+	 * @signature `canReflect.offKeyValue( obj, key, handler, queueName )`
+	 *
+	 * Removes a handlers from being called when `key` changes are
+	 * [can-event-queue/map/legacy/legacy.dispatch]ed.
+	 *
+	 * ```js
+	 * // Removes `handler` if it is in the notify queue.
+	 * canReflect.offKeyValue( obj, "prop", handler, "notify" )
+	 * ```
+	 *
+	 * @param {String} eventName The name of the event to remove. If not specified, all events are removed.
+	 * @param {Function} [handler] The handler that will be removed from the event. If not specified, all handlers for the event are removed.
+	 * @param {String} [queueName='mutate'] The name of the [can-queues] queue the handler was registered on. Defaults to `"mutate"`.
 	 */
 	"can.offKeyValue": function(key, handler, queueName) {
 		ensureMeta(this).handlers.delete([key, "onKeyValue", queueName || "mutate", handler]);
@@ -592,6 +649,15 @@ var symbols = {
 	/**
 	 * @function can-event-queue/map/legacy/legacy.can.isBound @can.isBound
 	 * @parent can-event-queue/map/legacy/legacy
+	 *
+	 * @description Return if the observable is bound to.
+	 *
+	 * @signature `canReflect.isBound(obj)`
+	 *
+	 * The `@can.isBound` symbol is added to make [can-reflect/observe.isBound]
+	 * return if `obj` is bound or not.
+	 *
+	 * @return {Boolean} True if the observable has been bound to with `.onKeyValue` or `.addEventListener`.
 	 */
 	"can.isBound": function() {
 		return ensureMeta(this).handlers.size() > 0;
