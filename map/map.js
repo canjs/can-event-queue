@@ -1,3 +1,4 @@
+
 var canDev = require("can-util/js/dev/dev");
 var assign = require("can-util/js/assign/assign");
 var queues = require("can-queues");
@@ -129,6 +130,24 @@ var props = {
 		mapBindings.on.call(this, event, one);
 		return this;
 	},
+	/**
+	 * @function can-event-queue/map/legacy/legacy.listenTo listenTo
+	 * @parent can-event-queue/map/legacy/legacy
+	 * @signature `obj.listenTo(other, event, handler)`
+	 *
+	 * Listens for an event on another object.
+	 * This is similar to concepts like event namespacing, except that the namespace
+	 * is the scope of the calling object.
+	 *
+	 * @param {Object} other The object to listen for events on.
+	 * @param {String} event The name of the event to listen for.
+	 * @param {Function} handler The handler that will be executed to handle the event.
+	 * @return {Object} this
+	 *
+	 * @signature `canEvent.listenTo.call(obj, other, event, handler)`
+	 *
+	 * This syntax can be used for objects that don't include the [can-event] mixin.
+	 */
 	listenTo: function (other, event, handler) {
 		// Initialize event cache
 		if(canReflect.isPrimitive(other)) {
