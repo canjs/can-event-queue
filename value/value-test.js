@@ -4,7 +4,7 @@ var valueEventBindings = require("./value");
 var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 
-var skipProductionTest = steal.isEnv("production") ? QUnit.skip : QUnit.test;
+var onlyDevTest = steal.isEnv("production") ? QUnit.skip : QUnit.test;
 
 QUnit.module("can-event-queue/value", {
 	setup: function() {},
@@ -47,7 +47,7 @@ QUnit.test("onBound and onUnbound called", 2, function(assert) {
 	obj.off(handler);
 });
 
-skipProductionTest("getWhatIChange", function(assert) {
+onlyDevTest("getWhatIChange", function(assert) {
 	var getChangesSymbol = canSymbol.for("can.getChangesDependencyRecord");
 	var observable = valueEventBindings({});
 

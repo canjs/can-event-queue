@@ -5,6 +5,8 @@ var domEvents = require("can-util/dom/events/events");
 var canSymbol = require("can-symbol");
 var canReflect = require("can-reflect");
 
+var onlyDevTest = steal.isEnv("production") ? QUnit.skip : QUnit.test;
+
 QUnit.module('can-event-queue/map/legacy',{
 	setup: function(){ },
 	teardown: function(){ }
@@ -253,4 +255,54 @@ test('One will listen to an event once, then unbind', function() {
 	obj.dispatch('mixin');
 	equal(mixin, 1, 'one should only fire a handler once (mixin)');
 
+});
+
+onlyDevTest("getWhatIChange", function(assert) {
+	var observable = eventQueue({});
+
+	var getWhatIChange = observable[canSymbol.for("can.getWhatIChange")].bind(
+		observable
+	);
+
+	assert.equal(
+		typeof getWhatIChange(),
+		"undefined",
+		"should return undefined if handlers is empty"
+	);
+
+	var getChanges = function(value) {
+		return function() {
+			return { valueDependencies: new Set([value]) };
+		};
+	};
+
+	var mutateHandler = function mutateHandler() {};
+	var domUIHandler = function domUIHandler() {};
+	var notifyHandler = function notifyHandler() {};
+
+	// faux observables to set as being changed by the handlers in the queues
+	var a = function a() {};
+	var b = function b() {};
+
+	var getChangesSymbol = canSymbol.for("can.getChangesDependencyRecord");
+	mutateHandler[getChangesSymbol] = getChanges(a);
+	domUIHandler[getChangesSymbol] = getChanges(b);
+	notifyHandler[getChangesSymbol] = getChanges(a);
+
+	// should take into account both legacy and onKeyValue handlers
+	observable.addEventListener("first", mutateHandler);
+	canReflect.onKeyValue(observable, "first", domUIHandler, "domUI");
+	canReflect.onKeyValue(observable, "first", notifyHandler, "notify");
+
+	var whatIChange = getWhatIChange("first");
+	assert.deepEqual(
+		whatIChange.mutate,
+		{ valueDependencies: new Set([a, b]) },
+		"domUI and mutate queues handlers deps should be included in .mutate"
+	);
+	assert.deepEqual(
+		whatIChange.derive,
+		{ valueDependencies: new Set([a]) },
+		"notify queue handlers deps should be included in .derive"
+	);
 });

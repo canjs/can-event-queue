@@ -4,6 +4,7 @@ var queues = require("can-queues");
 var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
+var mergeDependencyRecords = require("../../dependency-record/merge");
 
 var metaSymbol = canSymbol.for("can.meta"),
 	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchInstanceBoundChange"),
@@ -260,6 +261,52 @@ var symbols = {
 	},
 	"can.isBound": function() {
 		return ensureMeta(this).handlers.size() > 0;
+	},
+	"can.getWhatIChange": function getWhatIChange(key) {
+		//!steal-remove-start
+		var whatIChange = {};
+		var meta = ensureMeta(this);
+
+		var notifyHandlers = [].concat(
+			meta.handlers.get([key, "notify"]),
+			meta.handlers.get([key, "notify"])
+		);
+
+		var mutateHandlers = [].concat(
+			meta.handlers.get([key, "mutate"]),
+			meta.handlers.get([key, "domUI"])
+		);
+
+		if (notifyHandlers.length) {
+			notifyHandlers.forEach(function(handler) {
+				var changes = canReflect.getChangesDependencyRecord(handler);
+
+				if (changes) {
+					var record = whatIChange.derive;
+					if (!record) {
+						record = (whatIChange.derive = {});
+					}
+					mergeDependencyRecords(record, changes);
+				}
+			});
+		}
+
+		if (mutateHandlers.length) {
+			mutateHandlers.forEach(function(handler) {
+				var changes = canReflect.getChangesDependencyRecord(handler);
+
+				if (changes) {
+					var record = whatIChange.mutate;
+					if (!record) {
+						record = (whatIChange.mutate = {});
+					}
+					mergeDependencyRecords(record, changes);
+				}
+			});
+		}
+
+		return Object.keys(whatIChange).length ? whatIChange : undefined;
+		//!steal-remove-end
 	}
 };
 
