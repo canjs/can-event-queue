@@ -48,7 +48,7 @@
  * }, ["Ramiya","Justin"])
  * //-> logs: {type: "set", key: "first", value: "Ramiya"}
  * ```
- * 
+ *
  */
 var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
@@ -73,28 +73,81 @@ function ensureMeta(obj) {
     }
     return meta;
 }
+var props = {
+    /**
+     * @function can-event-queue/type/type.can.onInstanceBoundChange @can.onInstanceBoundChange
+     * @parent can-event-queue/type/type
+     * @description Listen to when any instance is bound for the first time or all
+     * handlers are removed.
+     *
+     * @signature `canReflect.onInstanceBoundChange(Type, handler(instance, isBound) )`
+     *
+     * ```js
+     * canReflect.onInstanceBoundChange(Person, function(person, isBound){
+     *    console.log("isBound");
+     * });
+     * ```
+     *
+     * @param {function(Any,Boolean)} handler(instance,isBound) A function is called
+     * when an instance is bound or unbound.  `isBound` will be `true` when the instance
+     * becomes bound and `false` when unbound.
+     */
+
+    /**
+     * @function can-event-queue/type/type.can.offInstanceBoundChange @can.offInstanceBoundChange
+     * @parent can-event-queue/type/type
+     *
+     * @description Stop listening to when an instance's bound status changes.
+     *
+     * @signature `canReflect.offInstanceBoundChange(Type, handler )`
+     *
+     * Stop listening to a handler bound with
+     * [can-event-queue/type/type.can.onInstanceBoundChange].
+     */
+
+
+    /**
+     * @function can-event-queue/type/type.can.onInstancePatches @can.onInstancePatches
+     * @parent can-event-queue/type/type
+     *
+     * @description Listen to patch changes on any isntance.
+     *
+     * @signature `canReflect.onInstancePatches(Type, handler(instance, patches) )`
+     *
+     * Listen to patch changes on any instance of `Type`. This is used by
+     * [can-connect] to know when a potentially `unbound` instance's `id`
+     * changes. If the `id` changes, the instance can be moved into the store
+     * while it is being saved.
+     *
+     */
+
+    /**
+     * @function can-event-queue/type/type.can.offInstancePatches @can.offInstancePatches
+     * @parent can-event-queue/type/type
+     *
+     * @description Stop listening to patch changes on any instance.
+     *
+     * @signature `canReflect.onInstancePatches(Type, handler )`
+     *
+     * Stop listening to a handler bound with [can-event-queue/type/type.can.onInstancePatches].
+     */
+};
+
+function onOffAndDispatch(symbolName, dispatchName, handlersName){
+    props["can.on"+symbolName] = function(handler, queueName) {
+        ensureMeta(this)[handlersName].add([queueName || "mutate", handler]);
+    };
+    props["can.off"+symbolName] = function(handler, queueName) {
+        ensureMeta(this)[handlersName].delete([queueName || "mutate", handler]);
+    };
+    props["can."+dispatchName] = function(instance, arg){
+        queues.enqueueByQueue(ensureMeta(this)[handlersName].getNode([]), this, [instance, arg]);
+    };
+}
+
+onOffAndDispatch("InstancePatches","dispatchInstanceOnPatches","instancePatchesHandlers");
+onOffAndDispatch("InstanceBoundChange","dispatchInstanceBoundChange","lifecycleHandlers");
 
 module.exports = function(obj){
-
-    return canReflect.assignSymbols(obj,{
-        "can.onInstanceBoundChange": function(handler, queueName) {
-    		ensureMeta(this).lifecycleHandlers.add([queueName || "mutate", handler]);
-    	},
-    	"can.offInstanceBoundChange": function(handler, queueName) {
-    		ensureMeta(this).lifecycleHandlers.delete([queueName || "mutate", handler]);
-    	},
-        "can.dispatchInstanceBoundChange": function(obj, isBound){
-            queues.enqueueByQueue(ensureMeta(this).lifecycleHandlers.getNode([]), this, [obj, isBound]);
-        },
-        "can.onInstancePatches": function(handler, queueName) {
-    		ensureMeta(this).instancePatchesHandlers.add([queueName || "mutate", handler]);
-    	},
-    	"can.offInstancePatches": function(handler, queueName) {
-    		ensureMeta(this).instancePatchesHandlers.delete([queueName || "mutate", handler]);
-    	},
-        // if we bound to onKeyValue(instance, "id")
-        "can.dispatchInstanceOnPatches": function(obj, patches){
-            queues.enqueueByQueue(ensureMeta(this).instancePatchesHandlers.getNode([]), this, [obj, patches]);
-        }
-    });
+    return canReflect.assignSymbols(obj,props);
 };
