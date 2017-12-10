@@ -1,12 +1,9 @@
 
-var canDev = require("can-util/js/dev/dev");
-var assign = require("can-util/js/assign/assign");
+var canDev = require('can-log/dev/dev');
 var queues = require("can-queues");
 var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
-
-var domEvents = require("can-util/dom/events/events");
 
 var metaSymbol = canSymbol.for("can.meta"),
 	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchInstanceBoundChange"),
@@ -204,51 +201,37 @@ var props = {
 		return this;
 	},
 	on: function(eventName, handler, queue) {
-		var listenWithDOM = domEvents.canAddEventListener.call(this);
-		if (listenWithDOM) {
-			var method = typeof handler === "string" ? "addDelegateListener" : "addEventListener";
-			domEvents[method].call(this, eventName, handler, queue);
+		if (this[onKeyValueSymbol]) {
+			this[onKeyValueSymbol](eventName, handler, queue);
+		} else if (this[onEventSymbol]) {
+			this[onEventSymbol](eventName, handler, queue);
+		} else if ("addEventListener" in this) {
+			this.addEventListener(eventName, handler, queue);
 		} else {
-			if (this[onKeyValueSymbol]) {
-				this[onKeyValueSymbol](eventName, handler, queue);
-			} else if (this[onEventSymbol]) {
-				this[onEventSymbol](eventName, handler, queue);
-			} else if ("addEventListener" in this) {
-				this.addEventListener(eventName, handler, queue);
+			if (!eventName && this[onValueSymbol]) {
+				canReflect.onValue(this, handler);
 			} else {
-				if (!eventName && this[onValueSymbol]) {
-					canReflect.onValue(this, handler);
-				} else {
-					throw new Error("can-event-queue: Unable to bind " + eventName);
-				}
+				throw new Error("can-event-queue: Unable to bind " + eventName);
 			}
 		}
 		return this;
 	},
 	off: function(eventName, handler, queue) {
 
-		var listenWithDOM = domEvents.canAddEventListener.call(this);
-		if (listenWithDOM) {
-			var method = typeof handler === "string" ? "removeDelegateListener" : "removeEventListener";
-			domEvents[method].call(this, eventName, handler, queue);
+		if (this[offKeyValueSymbol]) {
+			this[offKeyValueSymbol](eventName, handler, queue);
+		} else if (this[offEventSymbol]) {
+			this[offEventSymbol](eventName, handler, queue);
+		} else if ("removeEventListener" in this) {
+			this.removeEventListener(eventName, handler, queue);
 		} else {
-
-			if (this[offKeyValueSymbol]) {
-				this[offKeyValueSymbol](eventName, handler, queue);
-			} else if (this[offEventSymbol]) {
-				this[offEventSymbol](eventName, handler, queue);
-			} else if ("removeEventListener" in this) {
-				this.removeEventListener(eventName, handler, queue);
+			if (!eventName && this[offValueSymbol]) {
+				canReflect.offValue(this, handler);
 			} else {
-				if (!eventName && this[offValueSymbol]) {
-					canReflect.offValue(this, handler);
-				} else {
-					throw new Error("can-event-queue: Unable to unbind " + eventName);
-				}
-
+				throw new Error("can-event-queue: Unable to unbind " + eventName);
 			}
+
 		}
-		return this;
 	}
 };
 
@@ -283,11 +266,11 @@ var symbols = {
 // The actual mapBindings mixin function
 mapBindings = function(obj) {
 	// add properties
-	assign(obj, props);
+	canReflect.assignMap(obj, props);
 	// add symbols
 	return canReflect.assignSymbols(obj, symbols);
 };
 
-assign(mapBindings, props);
+canReflect.assignMap(mapBindings, props);
 
 module.exports = mapBindings;

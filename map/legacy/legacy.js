@@ -46,8 +46,7 @@
  * - `@can.dispatchInstanceOnPatches` - Called if [can-event-queue/map/legacy/legacy.dispatch] is called with `event.patches` as an array of
  *   patches.
  */
-var canDev = require("can-util/js/dev/dev");
-var assign = require("can-util/js/assign/assign");
+var canDev = require('can-log/dev/dev');
 var queues = require("can-queues");
 var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
@@ -667,7 +666,7 @@ var symbols = {
 // The actual legacyMapBindings mixin function
 legacyMapBindings = function(obj) {
 	// add properties
-	assign(obj, props);
+	canReflect.assignMap(obj, props);
 	// add symbols
 	return canReflect.assignSymbols(obj, symbols);
 };
@@ -687,7 +686,7 @@ function defineNonEnumerable(obj, prop, value) {
 }
 
 // Adds methods directly to method so it can be used like `can-event` used to be used.
-assign(legacyMapBindings, props);
+canReflect.assignMap(legacyMapBindings, props);
 
 defineNonEnumerable(legacyMapBindings, "start", function() {
 	console.warn("use can-queues.batch.start()");
