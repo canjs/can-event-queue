@@ -1,8 +1,8 @@
 var queues = require("can-queues");
 var KeyTree = require("can-key-tree");
 var canReflect = require("can-reflect");
-var mergeDependencyRecords = require("./merge-dependency-records");
 var defineLazyValue = require("can-define-lazy-value");
+var mergeDependencyRecords = require("../dependency-record/merge");
 
 var properties = {
 	/**
