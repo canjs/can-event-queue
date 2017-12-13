@@ -16,4 +16,4 @@
  * - [can-event-queue/type/type] - Mixins on constructor functions.
  */
 console.warn("import can-event-queue/map/map instead.");
-module.exports = require("./map");
+module.exports = require("./map/map");
