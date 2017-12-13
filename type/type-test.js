@@ -1,5 +1,5 @@
 var QUnit = require('steal-qunit');
-var eventQueue = require("../map/legacy/legacy");
+var eventQueue = require("../map/map");
 var canSymbol = require("can-symbol");
 var addTypeEvents = require("./type");
 

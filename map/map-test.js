@@ -1,5 +1,5 @@
 var QUnit = require('steal-qunit');
-var mapEventBindings = require("./map");
+var eventQueue = require("./map");
 var queues = require("can-queues");
 var domEvents = require("can-util/dom/events/events");
 var canSymbol = require("can-symbol");
@@ -15,9 +15,9 @@ QUnit.module('can-event-queue/map',{
 QUnit.test("basics", function(){
 	var collecting;
 	var secondFired = false;
-	var obj = mapEventBindings({});
+	var obj = eventQueue({});
 
-	obj.on("first", function(arg1, arg2){
+	obj.on("first", function(ev, arg1, arg2){
 
 		QUnit.equal(arg1, 1, "first arg");
 		QUnit.equal(arg2, 2, "second arg");
@@ -33,8 +33,9 @@ QUnit.test("basics", function(){
 	});
 
 
-	obj.on("second", function(){
+	obj.on("second", function(ev){
 		secondFired = true;
+		QUnit.ok(ev.batchNum, "got a batch number");
 	});
 
 
@@ -44,16 +45,25 @@ QUnit.test("basics", function(){
 
 });
 
+test("Everything is part of a batch", function(){
+	var obj = eventQueue({});
+
+	obj.on("foo", function(ev){
+		ok(ev.batchNum); // There is a batch number
+	});
+
+	obj.dispatch("foo");
+});
 
 
 
 
 QUnit.test("flushing works (#18)", 3, function(){
 	var firstFired, secondFired, thirdFired;
-	var obj = mapEventBindings({});
+	var obj = eventQueue({});
 
 	obj.on("first", function(){
-		queues.flush();
+		eventQueue.flush();
 		QUnit.ok(firstFired, "first fired");
 		QUnit.ok(secondFired, "second fired");
 		QUnit.ok(thirdFired, "third fired");
@@ -79,7 +89,7 @@ QUnit.test("flushing works (#18)", 3, function(){
 // the batch is ended ... but it doesn't pick up the next item in the queue and process it.
 QUnit.test("flushing a future batch (#18)", 3, function(){
 	var firstFired, secondFired, thirdFired;
-	var obj = mapEventBindings({});
+	var obj = eventQueue({});
 
 	obj.on("first", function(){
 		queues.batch.start();
@@ -87,7 +97,7 @@ QUnit.test("flushing a future batch (#18)", 3, function(){
 		obj.dispatch("third");
 		queues.batch.stop();
 
-		queues.flush();
+		eventQueue.flush();
 		QUnit.ok(firstFired, "first fired");
 		QUnit.ok(secondFired, "second fired");
 		QUnit.ok(thirdFired, "third fired");
@@ -113,15 +123,15 @@ if(typeof document !== "undefined") {
 		var handler = function(){
 			QUnit.ok(true, "click dispatched");
 		};
-		mapEventBindings.on.call(el,"click", handler);
+		eventQueue.on.call(el,"click", handler);
 		domEvents.dispatch.call(el, "click");
-		mapEventBindings.off.call(el,"click", handler);
+		eventQueue.off.call(el,"click", handler);
 		domEvents.dispatch.call(el, "click");
 	});
 }
 
 QUnit.test("handler-less unbind", function(){
-	var obj = mapEventBindings({});
+	var obj = eventQueue({});
 
 	obj.addEventListener("first", function(){});
 	obj.addEventListener("first", function(){},"notify");
@@ -132,8 +142,12 @@ QUnit.test("handler-less unbind", function(){
 	QUnit.equal(handlers.get(["first"]).length, 0, "first handlers removed");
 });
 QUnit.test("key-less unbind", function(){
-	var obj = mapEventBindings({});
+	var obj = eventQueue({});
 
+	obj.addEventListener("first", function(){});
+	obj.addEventListener("first", function(){},"notify");
+	obj.addEventListener("second", function(){});
+	obj.addEventListener("second", function(){},"notify");
 
 	canReflect.onKeyValue(obj,"first", function(){});
 	canReflect.onKeyValue(obj,"first", function(){},"notify");
@@ -141,13 +155,13 @@ QUnit.test("key-less unbind", function(){
 	canReflect.onKeyValue(obj,"second", function(){},"notify");
 
 	var handlers = obj[canSymbol.for("can.meta")].handlers;
-	QUnit.equal(handlers.get([]).length, 4, "4 handlers");
-	obj.off();
-	QUnit.equal(handlers.get([]).length, 0, "first handlers removed");
+	QUnit.equal(handlers.get([]).length, 8, "2 first handlers");
+	obj.removeEventListener();
+	QUnit.equal(handlers.get([]).length, 4, "first handlers removed");
 });
 
 QUnit.test("@@can.isBound symbol", function() {
-	var obj = mapEventBindings({});
+	var obj = eventQueue({});
 	var handler = function() {};
 
 	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound initially");
@@ -163,9 +177,9 @@ QUnit.test("@@can.isBound symbol", function() {
 
 
 test('listenTo and stopListening', 9, function () {
-	var parent = mapEventBindings({});
-	var child1 = mapEventBindings({});
-	var child2 = mapEventBindings({});
+	var parent = eventQueue({});
+	var child1 = eventQueue({});
+	var child2 = eventQueue({});
 	var change1WithId = 0;
 
 	parent.listenTo(child1, 'change', function () {
@@ -177,7 +191,7 @@ test('listenTo and stopListening', 9, function () {
 		}
 	});
 
-	child1.addEventListener('change', function () {
+	child1.bind('change', function () {
 		ok(true, 'child 1 handler without id called');
 	});
 	var foo1WidthId = 0;
@@ -197,7 +211,7 @@ test('listenTo and stopListening', 9, function () {
 			okToCall = false;
 		});
 	}());
-	child2.addEventListener('change', function () {
+	child2.bind('change', function () {
 		ok(true, 'child 2 handler without id called');
 	});
 	parent.listenTo(child2, 'foo', function () {
@@ -205,21 +219,21 @@ test('listenTo and stopListening', 9, function () {
 	});
 
 
-	mapEventBindings.dispatch.call(child1, 'change');
-	mapEventBindings.dispatch.call(child1, 'foo');
-	mapEventBindings.dispatch.call(child2, 'change');
-	mapEventBindings.dispatch.call(child2, 'foo');
+	eventQueue.dispatch.call(child1, 'change');
+	eventQueue.dispatch.call(child1, 'foo');
+	eventQueue.dispatch.call(child2, 'change');
+	eventQueue.dispatch.call(child2, 'foo');
 
 	parent.stopListening(child1);
 	parent.stopListening(child2, 'change');
-	mapEventBindings.dispatch.call(child1, 'change');
-	mapEventBindings.dispatch.call(child1, 'foo');
-	mapEventBindings.dispatch.call(child2, 'change');
-	mapEventBindings.dispatch.call(child2, 'foo');
+	eventQueue.dispatch.call(child1, 'change');
+	eventQueue.dispatch.call(child1, 'foo');
+	eventQueue.dispatch.call(child2, 'change');
+	eventQueue.dispatch.call(child2, 'foo');
 });
 test('stopListening on something you\'ve never listened to ', function () {
-	var parent = mapEventBindings({});
-	var child = mapEventBindings({});
+	var parent = eventQueue({});
+	var child = eventQueue({});
 	parent.listenTo({
 		addEventListener: function(){}
 	}, 'foo');
@@ -231,7 +245,7 @@ test('One will listen to an event once, then unbind', function() {
 	var mixin = 0;
 
 	// Mixin call
-	var obj = mapEventBindings({});
+	var obj = eventQueue({});
 	obj.one('mixin', function() {
 		mixin++;
 	});
@@ -243,19 +257,8 @@ test('One will listen to an event once, then unbind', function() {
 
 });
 
-QUnit.test("listenTo defaults to this if first arg is primitive", 1, function(){
-	var parent = mapEventBindings({});
-	parent.listenTo('foo', function(){
-		QUnit.ok(true, "dispatched foo");
-	});
-	parent.dispatch('foo');
-
-	parent.stopListening('foo');
-	parent.dispatch('foo');
-});
-
 onlyDevTest("getWhatIChange", function(assert) {
-	var observable = mapEventBindings({});
+	var observable = eventQueue({});
 
 	var getWhatIChange = observable[canSymbol.for("can.getWhatIChange")].bind(
 		observable
@@ -286,7 +289,8 @@ onlyDevTest("getWhatIChange", function(assert) {
 	domUIHandler[getChangesSymbol] = getChanges(b);
 	notifyHandler[getChangesSymbol] = getChanges(a);
 
-	canReflect.onKeyValue(observable, "first", mutateHandler);
+	// should take into account both legacy and onKeyValue handlers
+	observable.addEventListener("first", mutateHandler);
 	canReflect.onKeyValue(observable, "first", domUIHandler, "domUI");
 	canReflect.onKeyValue(observable, "first", notifyHandler, "notify");
 

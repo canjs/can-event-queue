@@ -16,7 +16,7 @@
  *
  * ```js
  * var mixinTypeBindings = require("can-event-queue/type/type");
- * var mixinLegacyMapBindings = require("can-event-queue/map/legacy/legacy");
+ * var mixinLegacyMapBindings = require("can-event-queue/map/map");
  *
  * class Person {
  *   constructor(data){
