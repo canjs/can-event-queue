@@ -172,6 +172,14 @@ var symbols = {
 
 		return Object.keys(whatIChange).length ? whatIChange : undefined;
 		//!steal-remove-end
+	},
+
+	/**
+	 * @function can-event-queue/value/value.can.isBound @can.isBound
+	 * @parent can-event-queue/value/value
+	 */
+	"can.isBound": function isBound() {
+		return this.handlers.size() > 0;
 	}
 };
 
