@@ -95,3 +95,16 @@ onlyDevTest("getWhatIChange", function(assert) {
 		"notify queue handlers deps should be included in .derive"
 	);
 });
+
+QUnit.test("isBound is correct", 2, function(assert) {
+	var isBoundSymbol = canSymbol.for("can.isBound");
+
+	var obj = valueEventBindings({});
+	var handler = function(){};
+
+	obj.on(handler);
+	assert.equal(obj[isBoundSymbol](), true, "isBound true");
+
+	obj.off(handler);
+	assert.equal(obj[isBoundSymbol](), false, "isBound false");
+});
