@@ -57,6 +57,15 @@ var queues = require("can-queues");
 
 var metaSymbol = canSymbol.for("can.meta");
 
+function addHandlers(obj, meta) {
+    if (!meta.lifecycleHandlers) {
+        meta.lifecycleHandlers = new KeyTree([Object, Array]);
+    }
+    if (!meta.instancePatchesHandlers) {
+        meta.instancePatchesHandlers = new KeyTree([Object, Array]);
+    }
+}
+
 function ensureMeta(obj) {
     var meta = obj[metaSymbol];
 
@@ -65,20 +74,15 @@ function ensureMeta(obj) {
         canReflect.setKeyValue(obj, metaSymbol, meta);
     }
 
-    if (!meta.lifecycleHandlers) {
-        meta.lifecycleHandlers = new KeyTree([Object, Array]);
-    }
-    if (!meta.instancePatchesHandlers) {
-        meta.instancePatchesHandlers = new KeyTree([Object, Array]);
-    }
+    addHandlers(obj, meta);
     return meta;
 }
+
 var props = {
     /**
      * @function can-event-queue/type/type.can.onInstanceBoundChange @can.onInstanceBoundChange
      * @parent can-event-queue/type/type
-     * @description Listen to when any instance is bound for the first time or all
-     * handlers are removed.
+     * @description Listen to when any instance is bound for the first time or all handlers are removed.
      *
      * @signature `canReflect.onInstanceBoundChange(Type, handler(instance, isBound) )`
      *
@@ -148,6 +152,13 @@ function onOffAndDispatch(symbolName, dispatchName, handlersName){
 onOffAndDispatch("InstancePatches","dispatchInstanceOnPatches","instancePatchesHandlers");
 onOffAndDispatch("InstanceBoundChange","dispatchInstanceBoundChange","lifecycleHandlers");
 
-module.exports = function(obj){
+function mixinTypeBindings(obj){
     return canReflect.assignSymbols(obj,props);
-};
+}
+
+Object.defineProperty(mixinTypeBindings, "addHandlers", {
+    enumerable: false,
+    value: addHandlers
+});
+
+module.exports = mixinTypeBindings;
