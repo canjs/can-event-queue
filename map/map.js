@@ -44,7 +44,9 @@ var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
 
-var domEvents = require("can-util/dom/events/events");
+var domEvents = require("can-dom-events");
+var isDomEventTarget = require("can-dom-events/helpers/util").isDomEventTarget;
+
 var mergeDependencyRecords = require("../../dependency-record/merge");
 
 var metaSymbol = canSymbol.for("can.meta"),
@@ -522,10 +524,13 @@ var props = {
 	 * @return {Any} The object `on` was called on.
 	 */
 	on: function(eventName, handler, queue) {
-		var listenWithDOM = domEvents.canAddEventListener.call(this);
+		var listenWithDOM = isDomEventTarget(this);
 		if (listenWithDOM) {
-			var method = typeof handler === "string" ? "addDelegateListener" : "addEventListener";
-			domEvents[method].call(this, eventName, handler, queue);
+			if (typeof handler === 'string') {
+				domEvents.addDelegateListener(this, eventName, handler, queue);
+			} else {
+				domEvents.addEventListener(this, eventName, handler, queue);
+			}
 		} else {
 			if ("addEventListener" in this) {
 				this.addEventListener(eventName, handler, queue);
@@ -564,13 +569,14 @@ var props = {
 	 * @return {Any} The object `on` was called on.
 	 */
 	off: function(eventName, handler, queue) {
-
-		var listenWithDOM = domEvents.canAddEventListener.call(this);
+		var listenWithDOM = isDomEventTarget(this);
 		if (listenWithDOM) {
-			var method = typeof handler === "string" ? "removeDelegateListener" : "removeEventListener";
-			domEvents[method].call(this, eventName, handler, queue);
+			if (typeof handler === 'string') {
+				domEvents.removeDelegateListener(this, eventName, handler, queue);
+			} else {
+				domEvents.removeEventListener(this, eventName, handler, queue);
+			}
 		} else {
-
 			if ("removeEventListener" in this) {
 				this.removeEventListener(eventName, handler, queue);
 			} else if (this[offKeyValueSymbol]) {
