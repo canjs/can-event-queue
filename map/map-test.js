@@ -55,9 +55,6 @@ test("Everything is part of a batch", function(){
 	obj.dispatch("foo");
 });
 
-
-
-
 QUnit.test("flushing works (#18)", 3, function(){
 	var firstFired, secondFired, thirdFired;
 	var obj = eventQueue({});
@@ -305,4 +302,22 @@ onlyDevTest("getWhatIChange", function(assert) {
 		{ valueDependencies: new Set([a]) },
 		"notify queue handlers deps should be included in .derive"
 	);
+});
+
+test('One will listen to an event once, then unbind', 0, function() {
+	var mixin = 0;
+
+	// Mixin call
+	var obj1 = eventQueue({}),
+		obj2 = eventQueue({});
+
+	obj1.listenTo(obj2,"foo", function(){
+		QUnit.ok(false, "this handler should not be called");
+	});
+
+	obj1.stopListening();
+
+
+	obj2.dispatch("foo");
+
 });

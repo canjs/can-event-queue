@@ -459,7 +459,7 @@ var props = {
 	 *
 	 */
 	stopListening: function (bindTarget, event, handler) {
-		if(canReflect.isPrimitive(bindTarget)) {
+		if(arguments.length && canReflect.isPrimitive(bindTarget)) {
 			handler = event;
 			event = bindTarget;
 			bindTarget = this;
