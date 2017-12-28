@@ -660,6 +660,59 @@ var symbols = {
 	"can.isBound": function() {
 		return ensureMeta(this).handlers.size() > 0;
 	},
+	/**
+	 * @function can-event-queue/map/map.can.getWhatIChange @can.getWhatIChange
+	 * @parent can-event-queue/map/map
+	 *
+	 * @description Return observables whose values are affected by attached event handlers
+	 * @signature `@can.getWhatIChange(key)`
+	 *
+	 * The `@@can.getWhatIChange` symbol is added to make sure [can-debug] can report
+	 * all the observables whose values are set by a given observable's key.
+	 *
+	 * This function iterates over the event handlers attached to a given `key` and
+	 * collects the result of calling `@@can.getChangesDependencyRecord` on each handler;
+	 * this symbol allows the caller to tell what observables are being mutated by
+	 * the event handler when it is executed.
+	 *
+	 * In the following example a [can-simple-map] instance named `me` is created
+	 * and when its `age` property changes, the value of a [can-simple-observable]
+	 * instance is set. The event handler that causes the mutation is then decatorated
+	 * with `@@can.getChangesDependencyRecord` to register the mutation dependency.
+	 *
+	 * ```js
+	 * var obs = new SimpleObservable("a");
+	 * var me = new SimpleMap({ age: 30 });
+	 * var canReflect = require("can-reflect");
+	 *
+	 * var onAgeChange = function onAgeChange() {
+	 *	canReflect.setValue(obs, "b");
+	 * };
+	 *
+	 * onAgeChange[canSymbol.for("can.getChangesDependencyRecord")] = function() {
+	 *	return {
+	 *		valueDependencies: new Set([ obs ]);
+	 *	}
+	 * };
+	 *
+	 * canReflect.onKeyValue(me, "age", onAgeChange);
+	 * me[canSymbol.for("can.getWhatIChange")]("age");
+	 * ```
+	 *
+	 * The dependency records collected from the event handlers are divided into
+	 * two categories:
+	 *
+	 * - mutate: Handlers in the mutate/domUI queues
+	 * - derive: Handlers in the notify queue
+	 *
+	 * Since event handlers are added by default to the "mutate" queue, calling
+	 * `@@can.getWhatIChange` on the `me` instance returns an object with a mutate
+	 * property and the `valueDependencies` Set registered on the `onAgeChange`
+	 * handler.
+	 *
+	 * Please check out the [can-reflect-dependencies] docs to learn more about
+	 * how this symbol is used to keep track of custom observable dependencies.
+	 */
 	"can.getWhatIChange": function getWhatIChange(key) {
 		//!steal-remove-start
 		var whatIChange = {};

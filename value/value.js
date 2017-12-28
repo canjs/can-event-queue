@@ -131,6 +131,56 @@ var symbols = {
 	/**
 	 * @function can-event-queue/value/value.can.getWhatIChange @can.getWhatIChange
 	 * @parent can-event-queue/value/value
+	 *
+	 * @description Return observables whose values are affected by attached event handlers
+	 * @signature `@can.getWhatIChange()`
+	 *
+	 * The `@@can.getWhatIChange` symbol is added to make sure [can-debug] can report
+	 * all the observables whose values are set by value-like observables.
+	 *
+	 * This function iterates over the event handlers attached to  the observable's value
+	 * event and collects the result of calling `@@can.getChangesDependencyRecord` on each
+	 * handler; this symbol allows the caller to tell what observables are being mutated
+	 * by the event handler when it is executed.
+	 *
+	 * In the following example a [can-simple-observable] instance named `month` is
+	 * created and when its value changes the `age` property of the `map` [can-simple-map]
+	 * instance is set. The event handler that causes the mutation is then decatorated with
+	 * `@@can.getChangesDependencyRecord` to register the mutation dependency.
+	 *
+	 * ```js
+	 * var month = new SimpleObservable(11);
+	 * var map = new SimpleMap({ age: 30 });
+	 * var canReflect = require("can-reflect");
+	 *
+	 * var onValueChange = function onValueChange() {
+	 *	map.set("age", 31);
+	 * };
+	 *
+	 * onValueChange[canSymbol.for("can.getChangesDependencyRecord")] = function() {
+	 *	return {
+	 *		keyDependencies: new Map([ [map, new Set(["age"])] ])
+	 *	}
+	 * };
+	 *
+	 * canReflect.onValue(month, onValueChange);
+	 * month[canSymbol.for("can.getWhatIChange")]();
+	 * ```
+	 *
+	 * The dependency records collected from the event handlers are divided into
+	 * two categories:
+	 *
+	 * - mutate: Handlers in the mutate/domUI queues
+	 * - derive: Handlers in the notify queue
+	 *
+	 * Since event handlers are added by default to the "mutate" queue, calling
+	 * `@@can.getWhatIChange` on the `month` instance returns an object with a mutate
+	 * property and the `keyDependencies` Map registered on the `onValueChange` handler.
+	 *
+	 * If multiple event handlers were attached to `month`, the dependency records
+	 * of each handler are merged by `@@can.getWhatIChange`. Please check out the
+	 * [can-reflect-dependencies] docs to learn more about how this symbol is used
+	 * to keep track of custom observable dependencies.
 	 */
 	"can.getWhatIChange": function getWhatIChange() {
 		//!steal-remove-start
