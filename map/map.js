@@ -47,7 +47,7 @@ var KeyTree = require("can-key-tree");
 var domEvents = require("can-dom-events");
 var isDomEventTarget = require("can-dom-events/helpers/util").isDomEventTarget;
 
-var mergeDependencyRecords = require("../../dependency-record/merge");
+var mergeDependencyRecords = require("../dependency-record/merge");
 
 var metaSymbol = canSymbol.for("can.meta"),
 	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchInstanceBoundChange"),
