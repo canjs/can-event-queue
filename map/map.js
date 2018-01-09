@@ -89,7 +89,7 @@ function addHandlers(obj, meta) {
 	}
 
 	if (!meta.listenHandlers) {
-		meta.listenHandlers = new KeyTree([Map, Object, Array]);
+		meta.listenHandlers = new KeyTree([Map, Map, Array]);
 	}
 }
 
@@ -412,10 +412,16 @@ var props = {
 	 * @return {Object} this
 	 */
 	listenTo: function (bindTarget, event, handler) {
+
 		if(canReflect.isPrimitive(bindTarget)) {
 			handler = event;
 			event = bindTarget;
 			bindTarget = this;
+		}
+
+		if(typeof event === "function") {
+			handler = event;
+			event = undefined;
 		}
 
 		// Initialize event cache
@@ -464,6 +470,11 @@ var props = {
 			event = bindTarget;
 			bindTarget = this;
 		}
+		if(typeof event === "function") {
+			handler = event;
+			event = undefined;
+		}
+
 		var listenHandlers = ensureMeta(this).listenHandlers;
 
 		function stopHandler(bindTarget, event, handler) {

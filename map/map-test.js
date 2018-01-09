@@ -321,3 +321,21 @@ test('One will listen to an event once, then unbind', 0, function() {
 	obj2.dispatch("foo");
 
 });
+
+test("unbind undefined with stopListening and onValue", function(){
+	var HANDLER = function(){};
+	var value = canReflect.assignSymbols({},{
+		"can.onValue": function(handler){
+			QUnit.equal(handler, HANDLER, "handler onValue")
+		},
+		"can.offValue": function(handler){
+			QUnit.equal(handler, HANDLER, "handler offValue")
+		}
+	});
+
+	var obj = eventQueue({});
+
+	obj.listenTo(value, HANDLER);
+	obj.stopListening();
+
+});
