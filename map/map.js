@@ -44,8 +44,10 @@ var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
 
-var domEvents = require("can-util/dom/events/events");
-var mergeDependencyRecords = require("../../dependency-record/merge");
+var domEvents = require("can-dom-events");
+var isDomEventTarget = require("can-dom-events/helpers/util").isDomEventTarget;
+
+var mergeDependencyRecords = require("../dependency-record/merge");
 
 var metaSymbol = canSymbol.for("can.meta"),
 	dispatchBoundChangeSymbol = canSymbol.for("can.dispatchInstanceBoundChange"),
@@ -533,10 +535,13 @@ var props = {
 	 * @return {Any} The object `on` was called on.
 	 */
 	on: function(eventName, handler, queue) {
-		var listenWithDOM = domEvents.canAddEventListener.call(this);
+		var listenWithDOM = isDomEventTarget(this);
 		if (listenWithDOM) {
-			var method = typeof handler === "string" ? "addDelegateListener" : "addEventListener";
-			domEvents[method].call(this, eventName, handler, queue);
+			if (typeof handler === 'string') {
+				domEvents.addDelegateListener(this, eventName, handler, queue);
+			} else {
+				domEvents.addEventListener(this, eventName, handler, queue);
+			}
 		} else {
 			if ("addEventListener" in this) {
 				this.addEventListener(eventName, handler, queue);
@@ -575,13 +580,14 @@ var props = {
 	 * @return {Any} The object `on` was called on.
 	 */
 	off: function(eventName, handler, queue) {
-
-		var listenWithDOM = domEvents.canAddEventListener.call(this);
+		var listenWithDOM = isDomEventTarget(this);
 		if (listenWithDOM) {
-			var method = typeof handler === "string" ? "removeDelegateListener" : "removeEventListener";
-			domEvents[method].call(this, eventName, handler, queue);
+			if (typeof handler === 'string') {
+				domEvents.removeDelegateListener(this, eventName, handler, queue);
+			} else {
+				domEvents.removeEventListener(this, eventName, handler, queue);
+			}
 		} else {
-
 			if ("removeEventListener" in this) {
 				this.removeEventListener(eventName, handler, queue);
 			} else if (this[offKeyValueSymbol]) {
@@ -671,6 +677,59 @@ var symbols = {
 	"can.isBound": function() {
 		return ensureMeta(this).handlers.size() > 0;
 	},
+	/**
+	 * @function can-event-queue/map/map.can.getWhatIChange @can.getWhatIChange
+	 * @parent can-event-queue/map/map
+	 *
+	 * @description Return observables whose values are affected by attached event handlers
+	 * @signature `@can.getWhatIChange(key)`
+	 *
+	 * The `@@can.getWhatIChange` symbol is added to make sure [can-debug] can report
+	 * all the observables whose values are set by a given observable's key.
+	 *
+	 * This function iterates over the event handlers attached to a given `key` and
+	 * collects the result of calling `@@can.getChangesDependencyRecord` on each handler;
+	 * this symbol allows the caller to tell what observables are being mutated by
+	 * the event handler when it is executed.
+	 *
+	 * In the following example a [can-simple-map] instance named `me` is created
+	 * and when its `age` property changes, the value of a [can-simple-observable]
+	 * instance is set. The event handler that causes the mutation is then decatorated
+	 * with `@@can.getChangesDependencyRecord` to register the mutation dependency.
+	 *
+	 * ```js
+	 * var obs = new SimpleObservable("a");
+	 * var me = new SimpleMap({ age: 30 });
+	 * var canReflect = require("can-reflect");
+	 *
+	 * var onAgeChange = function onAgeChange() {
+	 *	canReflect.setValue(obs, "b");
+	 * };
+	 *
+	 * onAgeChange[canSymbol.for("can.getChangesDependencyRecord")] = function() {
+	 *	return {
+	 *		valueDependencies: new Set([ obs ]);
+	 *	}
+	 * };
+	 *
+	 * canReflect.onKeyValue(me, "age", onAgeChange);
+	 * me[canSymbol.for("can.getWhatIChange")]("age");
+	 * ```
+	 *
+	 * The dependency records collected from the event handlers are divided into
+	 * two categories:
+	 *
+	 * - mutate: Handlers in the mutate/domUI queues
+	 * - derive: Handlers in the notify queue
+	 *
+	 * Since event handlers are added by default to the "mutate" queue, calling
+	 * `@@can.getWhatIChange` on the `me` instance returns an object with a mutate
+	 * property and the `valueDependencies` Set registered on the `onAgeChange`
+	 * handler.
+	 *
+	 * Please check out the [can-reflect-dependencies] docs to learn more about
+	 * how this symbol is used to keep track of custom observable dependencies.
+	 */
 	"can.getWhatIChange": function getWhatIChange(key) {
 		//!steal-remove-start
 		var whatIChange = {};

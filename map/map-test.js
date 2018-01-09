@@ -1,7 +1,7 @@
 var QUnit = require('steal-qunit');
 var eventQueue = require("./map");
 var queues = require("can-queues");
-var domEvents = require("can-util/dom/events/events");
+var domEvents = require("can-dom-events");
 var canSymbol = require("can-symbol");
 var canReflect = require("can-reflect");
 
@@ -121,9 +121,9 @@ if(typeof document !== "undefined") {
 			QUnit.ok(true, "click dispatched");
 		};
 		eventQueue.on.call(el,"click", handler);
-		domEvents.dispatch.call(el, "click");
+		domEvents.dispatch(el, "click");
 		eventQueue.off.call(el,"click", handler);
-		domEvents.dispatch.call(el, "click");
+		domEvents.dispatch(el, "click");
 	});
 }
 
