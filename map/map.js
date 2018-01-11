@@ -113,12 +113,11 @@ var ensureMeta = function ensureMeta(obj) {
 };
 
 function stopListeningArgumentsToKeys(bindTarget, event, handler, queueName) {
-	var args = [].slice.call(arguments, 0)
 	if(arguments.length && canReflect.isPrimitive(bindTarget)) {
 		queueName = handler;
 		handler = event;
 		event = bindTarget;
-		bindTarget = this;
+		bindTarget = this.context;
 	}
 	if(typeof event === "function") {
 		queueName = handler;
@@ -135,14 +134,13 @@ function stopListeningArgumentsToKeys(bindTarget, event, handler, queueName) {
 		if(event || handler || queueName) {
 			keys.push(event);
 			if(queueName || handler) {
-				keys.push(queueName || "mutate");
+				keys.push(queueName || this.defaultQueue);
 				if(handler) {
 					keys.push(handler);
 				}
 			}
 		}
 	}
-	console.log(args, "\ntarget:",bindTarget,"\nevent:", event, "\nhandler:",handler, "\nqueueName:",queueName,"keys:",keys,"\n\n");
 	return keys;
 }
 
@@ -502,8 +500,8 @@ var props = {
 	 * @return {Object} this
 	 *
 	 */
-	stopListening: function (bindTarget, event, handler, queueName) {
-		var keys = stopListeningArgumentsToKeys.apply(this, arguments);
+	stopListening: function () {
+		var keys = stopListeningArgumentsToKeys.apply({context: this, defaultQueue: "mutate"}, arguments);
 
 		var listenHandlers = ensureMeta(this).listenHandlers;
 

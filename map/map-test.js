@@ -343,21 +343,22 @@ test("unbind undefined with stopListening and onValue", function(){
 test("stopListeningArgumentsToKeys", function(){
 	var getKeys = eventQueue.stopListeningArgumentsToKeys;
 	var obj = {};
+	var that = {context: obj, defaultQueue: "mutate"};
 	var obj2 = {};
 	var handler = function(){};
 
-	QUnit.deepEqual( getKeys.call(obj), [], "obj.stopListening()");
-	QUnit.deepEqual( getKeys.call(obj, obj2), [obj2], "obj.stopListening(obj2)");
+	QUnit.deepEqual( getKeys.call(that), [], "obj.stopListening()");
+	QUnit.deepEqual( getKeys.call(that, obj2), [obj2], "obj.stopListening(obj2)");
 
-	QUnit.deepEqual( getKeys.call(obj,"event"), [obj, "event"], "obj.stopListening('event')");
-	QUnit.deepEqual( getKeys.call(obj,"event", handler), [obj, "event", "mutate", handler], "obj.stopListening('event', handler)");
-	QUnit.deepEqual( getKeys.call(obj,"event", handler, "notify"), [obj, "event", "notify", handler], "obj.stopListening('event', handler,'notify')");
+	QUnit.deepEqual( getKeys.call(that,"event"), [obj, "event"], "obj.stopListening('event')");
+	QUnit.deepEqual( getKeys.call(that,"event", handler), [obj, "event", "mutate", handler], "obj.stopListening('event', handler)");
+	QUnit.deepEqual( getKeys.call(that,"event", handler, "notify"), [obj, "event", "notify", handler], "obj.stopListening('event', handler,'notify')");
 
-	QUnit.deepEqual( getKeys.call(obj, obj2, handler), [obj2, undefined, "mutate", handler], "obj.stopListening(obj2, handler)");
+	QUnit.deepEqual( getKeys.call(that, obj2, handler), [obj2, undefined, "mutate", handler], "obj.stopListening(obj2, handler)");
 
-	QUnit.deepEqual( getKeys.call(obj, obj2, handler, "notify"), [obj2, undefined, "notify", handler], "obj.stopListening(obj2, handler, notify)");
+	QUnit.deepEqual( getKeys.call(that, obj2, handler, "notify"), [obj2, undefined, "notify", handler], "obj.stopListening(obj2, handler, notify)");
 
-	QUnit.deepEqual( getKeys.call(obj, "event", "notify"), [obj, "event", "notify"], "obj.stopListening('event', 'notify')");
+	QUnit.deepEqual( getKeys.call(that, "event", "notify"), [obj, "event", "notify"], "obj.stopListening('event', 'notify')");
 
 
 
