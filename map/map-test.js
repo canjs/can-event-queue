@@ -339,3 +339,64 @@ test("unbind undefined with stopListening and onValue", function(){
 	obj.stopListening();
 
 });
+
+test("stopListeningArgumentsToKeys", function(){
+	var getKeys = eventQueue.stopListeningArgumentsToKeys;
+	var obj = {};
+	var obj2 = {};
+	var handler = function(){};
+
+	QUnit.deepEqual( getKeys.call(obj), [], "obj.stopListening()");
+	QUnit.deepEqual( getKeys.call(obj, obj2), [obj2], "obj.stopListening(obj2)");
+
+	QUnit.deepEqual( getKeys.call(obj,"event"), [obj, "event"], "obj.stopListening('event')");
+	QUnit.deepEqual( getKeys.call(obj,"event", handler), [obj, "event", "mutate", handler], "obj.stopListening('event', handler)");
+	QUnit.deepEqual( getKeys.call(obj,"event", handler, "notify"), [obj, "event", "notify", handler], "obj.stopListening('event', handler,'notify')");
+
+	QUnit.deepEqual( getKeys.call(obj, obj2, handler), [obj2, undefined, "mutate", handler], "obj.stopListening(obj2, handler)");
+
+	QUnit.deepEqual( getKeys.call(obj, obj2, handler, "notify"), [obj2, undefined, "notify", handler], "obj.stopListening(obj2, handler, notify)");
+
+	QUnit.deepEqual( getKeys.call(obj, "event", "notify"), [obj, "event", "notify"], "obj.stopListening('event', 'notify')");
+
+
+
+});
+
+test("listenTo and stopListening takes a queueName", function(){
+	var CALLS = [];
+	var obj = eventQueue({});
+	var handler = function(){
+		CALLS.push("first");
+	};
+	var secondHandler = function(){
+		CALLS.push("second");
+	};
+
+	obj.listenTo("first",handler,"notify");
+	obj.dispatch("first");
+	obj.stopListening("first", handler, "notify");
+	obj.dispatch("first");
+
+	QUnit.deepEqual(CALLS, ["first"], "event, handler, queue");
+	CALLS = [];
+
+	obj.listenTo("first",handler,"notify");
+	obj.listenTo("first",secondHandler,"mutate");
+	obj.dispatch("first");
+	obj.stopListening("first");
+	obj.dispatch("first");
+
+	QUnit.deepEqual(CALLS, ["first","second"], "event");
+	CALLS = [];
+
+	obj.listenTo("first",handler,"notify");
+	obj.listenTo("first",secondHandler,"mutate");
+	obj.dispatch("first");
+	obj.stopListening("first","notify");
+	obj.dispatch("first");
+
+	QUnit.deepEqual(CALLS, ["first","second","second"], "event, queue");
+	CALLS = [];
+
+});

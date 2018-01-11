@@ -91,7 +91,8 @@ function addHandlers(obj, meta) {
 	}
 
 	if (!meta.listenHandlers) {
-		meta.listenHandlers = new KeyTree([Map, Map, Array]);
+		// context, eventName (might be undefined), queue, handlers
+		meta.listenHandlers = new KeyTree([Map, Map, Object, Array]);
 	}
 }
 
@@ -111,6 +112,39 @@ var ensureMeta = function ensureMeta(obj) {
 	return meta;
 };
 
+function stopListeningArgumentsToKeys(bindTarget, event, handler, queueName) {
+	var args = [].slice.call(arguments, 0)
+	if(arguments.length && canReflect.isPrimitive(bindTarget)) {
+		queueName = handler;
+		handler = event;
+		event = bindTarget;
+		bindTarget = this;
+	}
+	if(typeof event === "function") {
+		queueName = handler;
+		handler = event;
+		event = undefined;
+	}
+	if(typeof handler === "string") {
+		queueName = handler;
+		handler = undefined;
+	}
+	var keys = [];
+	if(bindTarget) {
+		keys.push(bindTarget);
+		if(event || handler || queueName) {
+			keys.push(event);
+			if(queueName || handler) {
+				keys.push(queueName || "mutate");
+				if(handler) {
+					keys.push(handler);
+				}
+			}
+		}
+	}
+	console.log(args, "\ntarget:",bindTarget,"\nevent:", event, "\nhandler:",handler, "\nqueueName:",queueName,"keys:",keys,"\n\n");
+	return keys;
+}
 
 
 // These are the properties we are going to add to objects
@@ -413,23 +447,25 @@ var props = {
 	 * @param {Function} handler The handler that will be executed to handle the event.
 	 * @return {Object} this
 	 */
-	listenTo: function (bindTarget, event, handler) {
+	listenTo: function (bindTarget, event, handler, queueName) {
 
 		if(canReflect.isPrimitive(bindTarget)) {
+			queueName = handler;
 			handler = event;
 			event = bindTarget;
 			bindTarget = this;
 		}
 
 		if(typeof event === "function") {
+			queueName = handler;
 			handler = event;
 			event = undefined;
 		}
 
 		// Initialize event cache
-		ensureMeta(this).listenHandlers.add([bindTarget, event, handler]);
+		ensureMeta(this).listenHandlers.add([bindTarget, event, queueName || "mutate", handler]);
 
-		legacyMapBindings.on.call(bindTarget, event, handler);
+		legacyMapBindings.on.call(bindTarget, event, handler, queueName || "mutate");
 		return this;
 	},
 	/**
@@ -466,52 +502,16 @@ var props = {
 	 * @return {Object} this
 	 *
 	 */
-	stopListening: function (bindTarget, event, handler) {
-		if(arguments.length && canReflect.isPrimitive(bindTarget)) {
-			handler = event;
-			event = bindTarget;
-			bindTarget = this;
-		}
-		if(typeof event === "function") {
-			handler = event;
-			event = undefined;
-		}
+	stopListening: function (bindTarget, event, handler, queueName) {
+		var keys = stopListeningArgumentsToKeys.apply(this, arguments);
 
 		var listenHandlers = ensureMeta(this).listenHandlers;
 
-		function stopHandler(bindTarget, event, handler) {
-			legacyMapBindings.off.call(bindTarget, event, handler);
+		function deleteHandler(bindTarget, event, queue, handler){
+			legacyMapBindings.off.call(bindTarget, event, handler, queue);
 		}
-		function stopEvent(bindTarget, event) {
-			listenHandlers.get([bindTarget, event]).forEach(function(handler){
-				stopHandler(bindTarget, event, handler);
-			});
-		}
-		function stopBindTarget(bindTarget) {
-			canReflect.eachKey( listenHandlers.getNode([bindTarget]), function(handlers, event){
-				stopEvent(bindTarget, event);
-			});
-		}
+		listenHandlers.delete(keys, deleteHandler);
 
-		if(bindTarget) {
-			if(event) {
-				if(handler) {
-					stopHandler(bindTarget, event, handler);
-					listenHandlers.delete([bindTarget, event, handler]);
-				} else {
-					stopEvent(bindTarget, event);
-					listenHandlers.delete([bindTarget, event]);
-				}
-			} else {
-				stopBindTarget(bindTarget);
-				listenHandlers.delete([bindTarget]);
-			}
-		} else {
-			canReflect.eachKey( listenHandlers.getNode([]), function(events, bindTarget){
-				stopBindTarget(bindTarget);
-			});
-			listenHandlers.delete([]);
-		}
 		return this;
 	},
 	/**
@@ -788,6 +788,14 @@ var symbols = {
 	}
 };
 
+// This can be removed in a future version.
+function defineNonEnumerable(obj, prop, value) {
+	Object.defineProperty(obj, prop, {
+		enumerable: false,
+		value: value
+	});
+}
+
 // The actual legacyMapBindings mixin function
 legacyMapBindings = function(obj) {
 	// add properties
@@ -797,7 +805,7 @@ legacyMapBindings = function(obj) {
 };
 
 defineNonEnumerable(legacyMapBindings, "addHandlers", addHandlers);
-
+defineNonEnumerable(legacyMapBindings, "stopListeningArgumentsToKeys", stopListeningArgumentsToKeys);
 
 
 
@@ -806,13 +814,7 @@ defineNonEnumerable(legacyMapBindings, "addHandlers", addHandlers);
 props.bind = props.addEventListener;
 props.unbind = props.removeEventListener;
 
-// This can be removed in a future version.
-function defineNonEnumerable(obj, prop, value) {
-	Object.defineProperty(obj, prop, {
-		enumerable: false,
-		value: value
-	});
-}
+
 
 // Adds methods directly to method so it can be used like `can-event` used to be used.
 canReflect.assignMap(legacyMapBindings, props);
