@@ -9,10 +9,10 @@ and `removeEventListener`.  This package should not be used for new packages.
 
 ## Use
 
-```js
-var eventQueue = require("can-event-queue");
+```javascript
+import eventQueue from "can-event-queue";
 
-var obj = eventQueue(obj);
+const obj = eventQueue(obj);
 
 // obj now has `.on`, `.dispatch`, `.addEventListener` methods
 // as well as `can.onKeyValue` and `can.offKeyValue` symbols.
@@ -27,8 +27,8 @@ obj.dispatch("event");
 
 Critically, event handlers can be registered to run in different queues.
 
-```js
-var obj = eventQueue(obj);
+```javascript
+const obj = eventQueue(obj);
 
 obj.on("event", function mutateHandler(){
     console.log("mutate")
