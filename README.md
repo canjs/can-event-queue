@@ -9,7 +9,7 @@ and `removeEventListener`.  This package should not be used for new packages.
 
 ## Use
 
-```javascript
+```js
 import eventQueue from "can-event-queue";
 
 const obj = eventQueue(obj);
@@ -19,7 +19,7 @@ const obj = eventQueue(obj);
 
 
 obj.on("event", function(){
-    console.log("event fired!")
+	console.log("event fired!")
 });
 
 obj.dispatch("event");
@@ -27,16 +27,16 @@ obj.dispatch("event");
 
 Critically, event handlers can be registered to run in different queues.
 
-```javascript
+```js
 const obj = eventQueue(obj);
 
 obj.on("event", function mutateHandler(){
-    console.log("mutate")
+	console.log("mutate")
 }, "mutate");
 
 
 obj.on("event", function(){
-    console.log("notify")
+	console.log("notify")
 }, "notify");
 
 obj.dispatch("event"); // logs "notify" then "mutate" because notify comes first

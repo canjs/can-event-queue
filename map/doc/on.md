@@ -28,10 +28,10 @@ of your application to map the changes to the object.
 This event is useful for noticing changes to a specific property. `.on` works
 almost identically with  [can-define], [can-simple-map], and [can-observe].
 
-```javascript
+```js
 const o = new DefineMap({name: "Justin"});
 o.on('name', function(ev, newVal, oldVal) {
-    console.log('The value of a changed.');
+	console.log('The value of a changed.');
 });
 ```
 
