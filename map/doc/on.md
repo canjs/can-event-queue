@@ -29,10 +29,10 @@ This event is useful for noticing changes to a specific property. `.on` works
 almost identically with  [can-define], [can-simple-map], and [can-observe].
 
 ```js
-var o = new DefineMap({name: "Justin"});
-o.on('name', function(ev, newVal, oldVal) {
-    console.log('The value of a changed.');
-});
+const o = new DefineMap( { name: "Justin" } );
+o.on( "name", function( ev, newVal, oldVal ) {
+	console.log( "The value of a changed." );
+} );
 ```
 
 The parameters of the event handler for the _property name_ event are:

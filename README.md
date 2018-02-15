@@ -10,34 +10,34 @@ and `removeEventListener`.  This package should not be used for new packages.
 ## Use
 
 ```js
-var eventQueue = require("can-event-queue");
+import eventQueue from "can-event-queue";
 
-var obj = eventQueue(obj);
+const obj = eventQueue( obj );
 
 // obj now has `.on`, `.dispatch`, `.addEventListener` methods
 // as well as `can.onKeyValue` and `can.offKeyValue` symbols.
 
 
-obj.on("event", function(){
-    console.log("event fired!")
-});
+obj.on( "event", function() {
+	console.log( "event fired!" );
+} );
 
-obj.dispatch("event");
+obj.dispatch( "event" );
 ```
 
 Critically, event handlers can be registered to run in different queues.
 
 ```js
-var obj = eventQueue(obj);
+const obj = eventQueue( obj );
 
-obj.on("event", function mutateHandler(){
-    console.log("mutate")
-}, "mutate");
+obj.on( "event", function mutateHandler() {
+	console.log( "mutate" );
+}, "mutate" );
 
 
-obj.on("event", function(){
-    console.log("notify")
-}, "notify");
+obj.on( "event", function() {
+	console.log( "notify" );
+}, "notify" );
 
-obj.dispatch("event"); // logs "notify" then "mutate" because notify comes first
+obj.dispatch( "event" ); // logs "notify" then "mutate" because notify comes first
 ```
