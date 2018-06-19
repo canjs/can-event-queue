@@ -673,7 +673,7 @@ var symbols = {
 	 * @return {Boolean} True if the observable has been bound to with `.onKeyValue` or `.addEventListener`.
 	 */
 	"can.isBound": function() {
-		return ensureMeta(this).handlers.size() > 0;
+		return !ensureMeta(this).handlers.isEmpty();
 	},
 	/**
 	 * @function can-event-queue/map/map.can.getWhatIChange @can.getWhatIChange

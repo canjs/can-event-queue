@@ -229,7 +229,7 @@ var symbols = {
 	 * @parent can-event-queue/value/value
 	 */
 	"can.isBound": function isBound() {
-		return this.handlers.size() > 0;
+		return !this.handlers.isEmpty();
 	}
 };
 
