@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @module {function} can-event-queue/type/type
  * @parent can-event-queue

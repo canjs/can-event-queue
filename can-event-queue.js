@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @module {undefined} can-event-queue can-event-queue
  * @parent can-observables
