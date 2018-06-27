@@ -111,20 +111,32 @@ var symbols = {
 	 * @param {Any} oldValue The old value of the observable.
 	 */
 	"can.dispatch": function(value, old) {
-		queues.enqueueByQueue(
+		var queuesArgs = [];
+		queuesArgs = [
 			this.handlers.getNode([]),
 			this,
 			[value, old]
-			//!steal-remove-start
-			/* jshint laxcomma: true */
-			, null
-			, [canReflect.getName(this), "changed to", value, "from", old]
-			/* jshint laxcomma: false */
-			//!steal-remove-end
-		);
+		];
+
 		//!steal-remove-start
-		if (typeof this._log === "function") {
-			this._log(old, value);
+		if(process.env.NODE_ENV !== 'production') {
+			queuesArgs = [
+				this.handlers.getNode([]),
+				this,
+				[value, old]
+				/* jshint laxcomma: true */
+				, null
+				, [canReflect.getName(this), "changed to", value, "from", old]
+				/* jshint laxcomma: false */
+			];
+		}
+		//!steal-remove-end
+		queues.enqueueByQueue.apply(queues, queuesArgs);
+		//!steal-remove-start
+		if(process.env.NODE_ENV !== 'production') {
+			if (typeof this._log === "function") {
+				this._log(old, value);
+			}
 		}
 		//!steal-remove-end
 	},
@@ -184,43 +196,45 @@ var symbols = {
 	 */
 	"can.getWhatIChange": function getWhatIChange() {
 		//!steal-remove-start
-		var whatIChange = {};
+		if(process.env.NODE_ENV !== 'production') {
+			var whatIChange = {};
 
-		var notifyHandlers = this.handlers.get(["notify"]);
-		var mutateHandlers = [].concat(
-			this.handlers.get(["mutate"]),
-			this.handlers.get(["domUI"])
-		);
+			var notifyHandlers = this.handlers.get(["notify"]);
+			var mutateHandlers = [].concat(
+				this.handlers.get(["mutate"]),
+				this.handlers.get(["domUI"])
+			);
 
-		if (notifyHandlers.length) {
-			notifyHandlers.forEach(function(handler) {
-				var changes = canReflect.getChangesDependencyRecord(handler);
+			if (notifyHandlers.length) {
+				notifyHandlers.forEach(function(handler) {
+					var changes = canReflect.getChangesDependencyRecord(handler);
 
-				if (changes) {
-					var record = whatIChange.derive;
-					if (!record) {
-						record = (whatIChange.derive = {});
+					if (changes) {
+						var record = whatIChange.derive;
+						if (!record) {
+							record = (whatIChange.derive = {});
+						}
+						mergeDependencyRecords(record, changes);
 					}
-					mergeDependencyRecords(record, changes);
-				}
-			});
-		}
+				});
+			}
 
-		if (mutateHandlers.length) {
-			mutateHandlers.forEach(function(handler) {
-				var changes = canReflect.getChangesDependencyRecord(handler);
+			if (mutateHandlers.length) {
+				mutateHandlers.forEach(function(handler) {
+					var changes = canReflect.getChangesDependencyRecord(handler);
 
-				if (changes) {
-					var record = whatIChange.mutate;
-					if (!record) {
-						record = (whatIChange.mutate = {});
+					if (changes) {
+						var record = whatIChange.mutate;
+						if (!record) {
+							record = (whatIChange.mutate = {});
+						}
+						mergeDependencyRecords(record, changes);
 					}
-					mergeDependencyRecords(record, changes);
-				}
-			});
-		}
+				});
+			}
 
-		return Object.keys(whatIChange).length ? whatIChange : undefined;
+			return Object.keys(whatIChange).length ? whatIChange : undefined;
+		}
 		//!steal-remove-end
 	},
 

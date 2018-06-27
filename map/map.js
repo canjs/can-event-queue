@@ -210,14 +210,16 @@ var props = {
 	 */
 	dispatch: function(event, args) {
 		//!steal-remove-start
-		if (arguments.length > 4) {
-			canDev.warn('Arguments to dispatch should be an array, not multiple arguments.');
-			args = Array.prototype.slice.call(arguments, 1);
-		}
+		if(process.env.NODE_ENV !== 'production') {
+			if (arguments.length > 4) {
+				canDev.warn('Arguments to dispatch should be an array, not multiple arguments.');
+				args = Array.prototype.slice.call(arguments, 1);
+			}
 
-		if (args && !Array.isArray(args)) {
-			canDev.warn('Arguments to dispatch should be an array.');
-			args = [args];
+			if (args && !Array.isArray(args)) {
+				canDev.warn('Arguments to dispatch should be an array.');
+				args = [args];
+			}
 		}
 		//!steal-remove-end
 
@@ -232,8 +234,10 @@ var props = {
 			var meta = ensureMeta(this);
 
 			//!steal-remove-start
-			if (!event.reasonLog) {
-				event.reasonLog = [canReflect.getName(this), "dispatched", '"' + event.type + '"', "with"].concat(args);
+			if(process.env.NODE_ENV !== 'production') {
+				if (!event.reasonLog) {
+					event.reasonLog = [canReflect.getName(this), "dispatched", '"' + event.type + '"', "with"].concat(args);
+				}
 			}
 
 			if (typeof meta._log === "function") {
@@ -730,50 +734,52 @@ var symbols = {
 	 */
 	"can.getWhatIChange": function getWhatIChange(key) {
 		//!steal-remove-start
-		var whatIChange = {};
-		var meta = ensureMeta(this);
+			if(process.env.NODE_ENV !== 'production') {
+			var whatIChange = {};
+			var meta = ensureMeta(this);
 
-		var notifyHandlers = [].concat(
-			meta.handlers.get([key, "event", "notify"]),
-			meta.handlers.get([key, "onKeyValue", "notify"])
-		);
+			var notifyHandlers = [].concat(
+				meta.handlers.get([key, "event", "notify"]),
+				meta.handlers.get([key, "onKeyValue", "notify"])
+			);
 
-		var mutateHandlers = [].concat(
-			meta.handlers.get([key, "event", "mutate"]),
-			meta.handlers.get([key, "event", "domUI"]),
-			meta.handlers.get([key, "onKeyValue", "mutate"]),
-			meta.handlers.get([key, "onKeyValue", "domUI"])
-		);
+			var mutateHandlers = [].concat(
+				meta.handlers.get([key, "event", "mutate"]),
+				meta.handlers.get([key, "event", "domUI"]),
+				meta.handlers.get([key, "onKeyValue", "mutate"]),
+				meta.handlers.get([key, "onKeyValue", "domUI"])
+			);
 
-		if (notifyHandlers.length) {
-			notifyHandlers.forEach(function(handler) {
-				var changes = canReflect.getChangesDependencyRecord(handler);
+			if (notifyHandlers.length) {
+				notifyHandlers.forEach(function(handler) {
+					var changes = canReflect.getChangesDependencyRecord(handler);
 
-				if (changes) {
-					var record = whatIChange.derive;
-					if (!record) {
-						record = (whatIChange.derive = {});
+					if (changes) {
+						var record = whatIChange.derive;
+						if (!record) {
+							record = (whatIChange.derive = {});
+						}
+						mergeDependencyRecords(record, changes);
 					}
-					mergeDependencyRecords(record, changes);
-				}
-			});
-		}
+				});
+			}
 
-		if (mutateHandlers.length) {
-			mutateHandlers.forEach(function(handler) {
-				var changes = canReflect.getChangesDependencyRecord(handler);
+			if (mutateHandlers.length) {
+				mutateHandlers.forEach(function(handler) {
+					var changes = canReflect.getChangesDependencyRecord(handler);
 
-				if (changes) {
-					var record = whatIChange.mutate;
-					if (!record) {
-						record = (whatIChange.mutate = {});
+					if (changes) {
+						var record = whatIChange.mutate;
+						if (!record) {
+							record = (whatIChange.mutate = {});
+						}
+						mergeDependencyRecords(record, changes);
 					}
-					mergeDependencyRecords(record, changes);
-				}
-			});
-		}
+				});
+			}
 
-		return Object.keys(whatIChange).length ? whatIChange : undefined;
+			return Object.keys(whatIChange).length ? whatIChange : undefined;
+		}
 		//!steal-remove-end
 	},
 	"can.onPatches": function(handler, queue) {
