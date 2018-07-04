@@ -1,3 +1,4 @@
+"use strict";
 var canReflect = require("can-reflect");
 
 var mergeValueDependencies = function mergeValueDependencies(obj, source) {

@@ -1,3 +1,4 @@
+"use strict";
 /**
  * @module {function} can-event-queue/map/map
  * @parent can-event-queue

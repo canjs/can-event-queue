@@ -1,3 +1,4 @@
+"use strict";
 var queues = require("can-queues");
 var KeyTree = require("can-key-tree");
 var canReflect = require("can-reflect");
@@ -300,31 +301,31 @@ function defineLazyHandlers(){
  *
  */
 
- /**
-  * @function can-event-queue/value/value.onUnbound onUnbound
-  * @parent can-event-queue/value/value
-  *
-  * @description Perform operations when an observable loses all of its event handlers.
-  *
-  * @signature `.onBound()`
-  *
-  * This method is not implemented by `can-event-queue/value/value`. Instead, the object
-  * should implement it if it wants to perform some actions when it becomes unbound.
-  *
-  * ```js
-  * var mixinValueBindings = require("can-event-queue/value/value");
-  *
-  * var observable = mixinValueBindings({
-  *   onUnbound: function(){
-  *     console.log("I AM UNBOUND!");
-  *   }
-  * });
-  * var handler = function(){}
-  * observable.on(function(){});
-  * observable.off(function(){});
-  * // Logs: "I AM UNBOUND!"
-  * ```
-  */
+/**
+ * @function can-event-queue/value/value.onUnbound onUnbound
+ * @parent can-event-queue/value/value
+ *
+ * @description Perform operations when an observable loses all of its event handlers.
+ *
+ * @signature `.onBound()`
+ *
+ * This method is not implemented by `can-event-queue/value/value`. Instead, the object
+ * should implement it if it wants to perform some actions when it becomes unbound.
+ *
+ * ```js
+ * var mixinValueBindings = require("can-event-queue/value/value");
+ *
+ * var observable = mixinValueBindings({
+ *   onUnbound: function(){
+ *     console.log("I AM UNBOUND!");
+ *   }
+ * });
+ * var handler = function(){}
+ * observable.on(function(){});
+ * observable.off(function(){});
+ * // Logs: "I AM UNBOUND!"
+ * ```
+ */
 
 /**
  * @module {function} can-event-queue/value/value
