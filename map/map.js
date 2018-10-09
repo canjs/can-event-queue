@@ -74,8 +74,9 @@ function addHandlers(obj, meta) {
 				if (obj._eventSetup !== undefined) {
 					obj._eventSetup();
 				}
-				if(obj.constructor[dispatchBoundChangeSymbol]) {
-					obj.constructor[dispatchBoundChangeSymbol](obj, true);
+				var constructor = obj.constructor;
+				if(constructor[dispatchBoundChangeSymbol] !== undefined && obj instanceof constructor) {
+					constructor[dispatchBoundChangeSymbol](obj, true);
 				}
 				//queues.enqueueByQueue(getLifecycleHandlers(obj).getNode([]), obj, [true]);
 			},

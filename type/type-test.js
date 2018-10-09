@@ -91,3 +91,25 @@ test("can.dispatchInstanceOnPatches with patches on event object", function() {
 		[obj1, [{type: "add",    key: "b", value: 1}]]
 	]);
 });
+
+QUnit.test("Stop dispatching instanceBound events when prototype is bound (#20)", function(){
+	var Type = function(){
+		this.instanceObject = true;
+	};
+	Type.prototype.prototypeObject = true;
+	addTypeEvents(Type);
+	eventQueue(Type.prototype);
+	var instances = [];
+	Type[canSymbol.for("can.onInstanceBoundChange")](function(instance){
+		instances.push(instance);
+	});
+
+	var instance = new Type();
+
+	instance.on("prop", function(){});
+
+	Type.prototype.on("other", function(){});
+
+	QUnit.equal(instances.length, 1, "one instance");
+	QUnit.equal(instances[0], instance, "an instance");
+});
