@@ -100,16 +100,22 @@ QUnit.test("Stop dispatching instanceBound events when prototype is bound (#20)"
 	addTypeEvents(Type);
 	eventQueue(Type.prototype);
 	var instances = [];
-	Type[canSymbol.for("can.onInstanceBoundChange")](function(instance){
-		instances.push(instance);
+	Type[canSymbol.for("can.onInstanceBoundChange")](function(instance, bound){
+		instances.push([instance, bound]);
 	});
 
 	var instance = new Type();
+	function handler(){}
 
-	instance.on("prop", function(){});
+	instance.on("prop", handler);
+	Type.prototype.on("other", handler);
 
-	Type.prototype.on("other", function(){});
+	Type.prototype.off("other", handler);
+	instance.off("prop", handler);
 
-	QUnit.equal(instances.length, 1, "one instance");
-	QUnit.equal(instances[0], instance, "an instance");
+	QUnit.deepEqual(instances,[
+		[instance, true],
+		[instance, false]
+	]);
+
 });
