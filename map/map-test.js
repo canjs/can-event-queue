@@ -117,6 +117,7 @@ QUnit.test("flushing a future batch (#18)", 3, function(){
 if(typeof document !== "undefined") {
 	QUnit.test("can listen to DOM events", 1,function(){
 		var el = document.createElement("div");
+		document.querySelector('#qunit-fixture').appendChild(el);
 		var handler = function(){
 			QUnit.ok(true, "click dispatched");
 		};
