@@ -548,12 +548,12 @@ var props = {
 				domEvents.addEventListener(this, eventName, handler, queue);
 			}
 		} else {
-			if ("addEventListener" in this) {
+			if (this[onEventSymbol]) {
+				this[onEventSymbol](eventName, handler, queue);
+			} else if ("addEventListener" in this) {
 				this.addEventListener(eventName, handler, queue);
 			} else if (this[onKeyValueSymbol]) {
 				canReflect.onKeyValue(this, eventName, handler, queue);
-			} else if (this[onEventSymbol]) {
-				this[onEventSymbol](eventName, handler, queue);
 			} else {
 				if (!eventName && this[onValueSymbol]) {
 					canReflect.onValue(this, handler, queue);
@@ -593,12 +593,12 @@ var props = {
 				domEvents.removeEventListener(this, eventName, handler, queue);
 			}
 		} else {
-			if ("removeEventListener" in this) {
+			if (this[offEventSymbol]) {
+				this[offEventSymbol](eventName, handler, queue);
+			} else if ("removeEventListener" in this) {
 				this.removeEventListener(eventName, handler, queue);
 			} else if (this[offKeyValueSymbol]) {
 				canReflect.offKeyValue(this, eventName, handler, queue);
-			} else if (this[offEventSymbol]) {
-				this[offEventSymbol](eventName, handler, queue);
 			} else {
 				if (!eventName && this[offValueSymbol]) {
 					canReflect.offValue(this, handler, queue);

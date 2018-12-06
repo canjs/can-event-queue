@@ -402,3 +402,36 @@ test("listenTo and stopListening takes a queueName", function(){
 	CALLS = [];
 
 });
+
+QUnit.test("on goes onEvent, addEventListener, then onKeyValue", function(){
+	var called = [];
+	var fullSet = canReflect.assignSymbols({
+		addEventListener: function(){
+			called.push("addEventListener");
+		}
+	},{
+		"can.onEvent": function(){
+			called.push("onEvent");
+		},
+		'can.onKeyValue': function(){
+			called.push("onKeyValue");
+		}
+	})
+	eventQueue.on.call(fullSet, "event", function(){});
+
+	QUnit.deepEqual(called, ["onEvent"]);
+
+	called = [];
+	var addEvent = canReflect.assignSymbols({
+		addEventListener: function(){
+			called.push("addEventListener");
+		}
+	},{
+		'can.onKeyValue': function(){
+			called.push("onKeyValue");
+		}
+	})
+	eventQueue.on.call(addEvent, "event", function(){});
+
+	QUnit.deepEqual(called, ["addEventListener"]);
+});
