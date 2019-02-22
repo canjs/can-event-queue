@@ -3,6 +3,7 @@
  * @module {undefined} can-event-queue can-event-queue
  * @parent can-observables
  * @collection can-infrastructure
+ * @package ./package.json
  *
  * @description Mixin observable behavior to your types.
  *
