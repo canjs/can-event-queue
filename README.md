@@ -5,11 +5,11 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/canjs/can-event-queue/blob/master/LICENSE)
 [![npm version](https://badge.fury.io/js/can-event-queue.svg)](https://www.npmjs.com/package/can-event-queue)
 [![Travis build status](https://travis-ci.org/canjs/can-event-queue.svg?branch=master)](https://travis-ci.org/canjs/can-event-queue)
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/canjs/can-event-queue?branch=master&svg=true)](https://ci.appveyor.com/project/matthewp/can-event-queue)
-[![Coverage status](https://coveralls.io/repos/github/canjs/can-event-queue/badge.svg?branch=master)](https://coveralls.io/github/canjs/can-event-queue?branch=master)
 [![Greenkeeper badge](https://badges.greenkeeper.io/canjs/can-event-queue.svg)](https://greenkeeper.io/)
 
+`can-event-queue` mixes in event binding and dispatching methods that
 use [can-queues](../can-queues).  This adds legacy binding methods `addEventListener`
+and `removeEventListener`.  **This package should not be used for new packages.**
 
 ## Documentation
 
