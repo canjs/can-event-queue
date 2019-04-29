@@ -58,7 +58,8 @@ var metaSymbol = canSymbol.for("can.meta"),
 	onEventSymbol = canSymbol.for("can.onEvent"),
 	offEventSymbol = canSymbol.for("can.offEvent"),
 	onValueSymbol = canSymbol.for("can.onValue"),
-	offValueSymbol = canSymbol.for("can.offValue");
+	offValueSymbol = canSymbol.for("can.offValue"),
+	inSetupSymbol = canSymbol.for("can.initializing");
 
 var legacyMapBindings;
 
@@ -227,7 +228,7 @@ var props = {
 		//!steal-remove-end
 
 		// Don't send events if initalizing.
-		if (!this.__inSetup) {
+		if (this.__inSetup !== true && this[inSetupSymbol] !== true) {
 			if (typeof event === 'string') {
 				event = {
 					type: event
