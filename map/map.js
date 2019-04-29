@@ -228,7 +228,7 @@ var props = {
 		//!steal-remove-end
 
 		// Don't send events if initalizing.
-		if (!this.__inSetup || !this[inSetupSymbol]) {
+		if (this.__inSetup !== true && this[inSetupSymbol] !== true) {
 			if (typeof event === 'string') {
 				event = {
 					type: event
