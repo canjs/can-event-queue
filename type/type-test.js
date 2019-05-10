@@ -4,12 +4,12 @@ var canSymbol = require("can-symbol");
 var addTypeEvents = require("./type");
 
 QUnit.module('can-event-queue/type-events',{
-	setup: function(){ },
-	teardown: function(){ }
+	beforeEach: function(assert) { },
+	afterEach: function(assert) { }
 });
 
-test("Events when object is bound/unbound", function() {
-	expect(1);
+QUnit.test("Events when object is bound/unbound", function(assert) {
+	assert.expect(1);
 	var Type = function(){};
 	eventQueue(Type.prototype);
 	addTypeEvents( Type );
@@ -35,7 +35,7 @@ test("Events when object is bound/unbound", function() {
 	obj1.on("first", handler);
 	obj1.off("first", handler);
 
-	QUnit.deepEqual(calls,[
+	assert.deepEqual(calls,[
 		[obj1,true],
 		[obj1,false],
 		[obj2,true],
@@ -43,8 +43,8 @@ test("Events when object is bound/unbound", function() {
 	]);
 });
 
-test("can.dispatchInstanceOnPatches", function() {
-	expect(1);
+QUnit.test("can.dispatchInstanceOnPatches", function(assert) {
+	assert.expect(1);
 	var Type = function(){};
 	eventQueue(Type.prototype);
 	addTypeEvents( Type );
@@ -59,13 +59,13 @@ test("can.dispatchInstanceOnPatches", function() {
     Type[canSymbol.for("can.dispatchInstanceOnPatches")](obj1, [{type: "add",    key: "b", value: 1}]);
     Type[canSymbol.for("can.offInstancePatches")](handler);
 
-	QUnit.deepEqual(calls,[
+	assert.deepEqual(calls,[
 		[obj1, [{type: "add",    key: "b", value: 1}]]
 	]);
 });
 
-test("can.dispatchInstanceOnPatches with patches on event object", function() {
-	expect(1);
+QUnit.test("can.dispatchInstanceOnPatches with patches on event object", function(assert) {
+	assert.expect(1);
 	var Type = function(){};
 	eventQueue(Type.prototype);
 	addTypeEvents( Type );
@@ -87,12 +87,12 @@ test("can.dispatchInstanceOnPatches with patches on event object", function() {
 		patches: [{type: "add",    key: "b", value: 1}]
 	});
 
-	QUnit.deepEqual(calls,[
+	assert.deepEqual(calls,[
 		[obj1, [{type: "add",    key: "b", value: 1}]]
 	]);
 });
 
-QUnit.test("Stop dispatching instanceBound events when prototype is bound (#20)", function(){
+QUnit.test("Stop dispatching instanceBound events when prototype is bound (#20)", function(assert) {
 	var Type = function(){
 		this.instanceObject = true;
 	};
@@ -113,7 +113,7 @@ QUnit.test("Stop dispatching instanceBound events when prototype is bound (#20)"
 	Type.prototype.off("other", handler);
 	instance.off("prop", handler);
 
-	QUnit.deepEqual(instances,[
+	assert.deepEqual(instances,[
 		[instance, true],
 		[instance, false]
 	]);
