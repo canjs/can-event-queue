@@ -44,6 +44,7 @@ var queues = require("can-queues");
 var canReflect = require("can-reflect");
 var canSymbol = require("can-symbol");
 var KeyTree = require("can-key-tree");
+var ObservationRecorder = require("can-observation-recorder");
 
 var domEvents = require("can-dom-events");
 var isDomEventTarget = require("can-dom-events/helpers/util").isDomEventTarget;
@@ -610,6 +611,13 @@ var props = {
 			}
 		}
 		return this;
+	},
+	// ### function canSafelyMutate
+	// #### (not yet part of published API)
+	// return true if a mutation of a value or property at this time is unlikely to cause an
+	//   infinite loop or degraded performance.
+	canSafelyMutate() {
+		return !queues.deriveQueue.isFlushing && !ObservationRecorder.isRecording()
 	}
 };
 
