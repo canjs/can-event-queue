@@ -55,7 +55,8 @@ QUnit.test("Everything is part of a batch", function(assert) {
 	obj.dispatch("foo");
 });
 
-QUnit.test("flushing works (#18)", 3, function(assert) {
+QUnit.test("flushing works (#18)", function(assert) {
+	assert.expect(3);
 	var firstFired, secondFired, thirdFired;
 	var obj = eventQueue({});
 
@@ -84,7 +85,8 @@ QUnit.test("flushing works (#18)", 3, function(assert) {
 
 // The problem with the way atm is doing it ...
 // the batch is ended ... but it doesn't pick up the next item in the queue and process it.
-QUnit.test("flushing a future batch (#18)", 3, function(assert) {
+QUnit.test("flushing a future batch (#18)", function(assert) {
+	assert.expect(3);
 	var firstFired, secondFired, thirdFired;
 	var obj = eventQueue({});
 
@@ -115,7 +117,8 @@ QUnit.test("flushing a future batch (#18)", 3, function(assert) {
 });
 
 if(typeof document !== "undefined") {
-	QUnit.test("can listen to DOM events", 1,function(assert) {
+	QUnit.test("can listen to DOM events",function(assert) {
+		assert.expect(1);
 		var el = document.createElement("div");
 		document.querySelector('#qunit-fixture').appendChild(el);
 		var handler = function(){
@@ -174,7 +177,8 @@ QUnit.test("@@can.isBound symbol", function(assert) {
 
 
 
-QUnit.test('listenTo and stopListening', 9, function(assert) {
+QUnit.test('listenTo and stopListening', function(assert) {
+	assert.expect(9);
 	var parent = eventQueue({});
 	var child1 = eventQueue({});
 	var child2 = eventQueue({});
@@ -305,7 +309,8 @@ onlyDevTest("getWhatIChange", function(assert) {
 	);
 });
 
-QUnit.test('One will listen to an event once, then unbind', 0, function(assert) {
+QUnit.test('One will listen to an event once, then unbind', function(assert) {
+	assert.expect(0);
 	var mixin = 0;
 
 	// Mixin call

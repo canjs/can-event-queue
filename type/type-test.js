@@ -4,8 +4,8 @@ var canSymbol = require("can-symbol");
 var addTypeEvents = require("./type");
 
 QUnit.module('can-event-queue/type-events',{
-	beforeEach: function(assert) { },
-	afterEach: function(assert) { }
+	beforeEach: function() { },
+	afterEach: function() { }
 });
 
 QUnit.test("Events when object is bound/unbound", function(assert) {
