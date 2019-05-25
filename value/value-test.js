@@ -7,11 +7,11 @@ var canSymbol = require("can-symbol");
 var onlyDevTest = steal.isEnv("production") ? QUnit.skip : QUnit.test;
 
 QUnit.module("can-event-queue/value", {
-	setup: function() {},
-	teardown: function() {}
+	beforeEach: function() {},
+	afterEach: function() {}
 });
 
-QUnit.test("basics", function() {
+QUnit.test("basics", function(assert) {
 	var observable = valueEventBindings({});
 	var values = [];
 
@@ -25,14 +25,15 @@ QUnit.test("basics", function() {
 
 	observable[canSymbol.for("can.dispatch")](1, 2);
 
-	QUnit.deepEqual(
+	assert.deepEqual(
 		values,
 		[["on", 1, 2], ["onValue", 1, 2]],
 		"dispatched worked"
 	);
 });
 
-QUnit.test("onBound and onUnbound called", 2, function(assert) {
+QUnit.test("onBound and onUnbound called", function(assert) {
+	assert.expect(2);
 	var obj = valueEventBindings({
 		onBound: function(){
 			assert.ok(true,"setup called");
@@ -96,7 +97,8 @@ onlyDevTest("getWhatIChange", function(assert) {
 	);
 });
 
-QUnit.test("isBound is correct", 2, function(assert) {
+QUnit.test("isBound is correct", function(assert) {
+	assert.expect(2);
 	var isBoundSymbol = canSymbol.for("can.isBound");
 
 	var obj = valueEventBindings({});

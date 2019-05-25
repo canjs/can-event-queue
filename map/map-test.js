@@ -8,34 +8,34 @@ var canReflect = require("can-reflect");
 var onlyDevTest = steal.isEnv("production") ? QUnit.skip : QUnit.test;
 
 QUnit.module('can-event-queue/map',{
-	setup: function(){ },
-	teardown: function(){ }
+	beforeEach: function(assert) { },
+	afterEach: function(assert) { }
 });
 
-QUnit.test("basics", function(){
+QUnit.test("basics", function(assert) {
 	var collecting;
 	var secondFired = false;
 	var obj = eventQueue({});
 
 	obj.on("first", function(ev, arg1, arg2){
 
-		QUnit.equal(arg1, 1, "first arg");
-		QUnit.equal(arg2, 2, "second arg");
+		assert.equal(arg1, 1, "first arg");
+		assert.equal(arg2, 2, "second arg");
 
-		QUnit.ok(!collecting, "not collecting b/c we're not in a batch yet");
+		assert.ok(!collecting, "not collecting b/c we're not in a batch yet");
 
 		obj.dispatch("second");
 
 		// collecting = canBatch.collecting();
-		//QUnit.ok(collecting, "forced a batch");
-		QUnit.equal(secondFired, false, "don't fire yet, put in next batch");
+		//assert.ok(collecting, "forced a batch");
+		assert.equal(secondFired, false, "don't fire yet, put in next batch");
 
 	});
 
 
 	obj.on("second", function(ev){
 		secondFired = true;
-		QUnit.ok(ev.batchNum, "got a batch number");
+		assert.ok(ev.batchNum, "got a batch number");
 	});
 
 
@@ -45,25 +45,26 @@ QUnit.test("basics", function(){
 
 });
 
-test("Everything is part of a batch", function(){
+QUnit.test("Everything is part of a batch", function(assert) {
 	var obj = eventQueue({});
 
 	obj.on("foo", function(ev){
-		ok(ev.batchNum); // There is a batch number
+		assert.ok(ev.batchNum); // There is a batch number
 	});
 
 	obj.dispatch("foo");
 });
 
-QUnit.test("flushing works (#18)", 3, function(){
+QUnit.test("flushing works (#18)", function(assert) {
+	assert.expect(3);
 	var firstFired, secondFired, thirdFired;
 	var obj = eventQueue({});
 
 	obj.on("first", function(){
 		eventQueue.flush();
-		QUnit.ok(firstFired, "first fired");
-		QUnit.ok(secondFired, "second fired");
-		QUnit.ok(thirdFired, "third fired");
+		assert.ok(firstFired, "first fired");
+		assert.ok(secondFired, "second fired");
+		assert.ok(thirdFired, "third fired");
 	});
 	obj.on("first", function(){
 		firstFired = true;
@@ -84,7 +85,8 @@ QUnit.test("flushing works (#18)", 3, function(){
 
 // The problem with the way atm is doing it ...
 // the batch is ended ... but it doesn't pick up the next item in the queue and process it.
-QUnit.test("flushing a future batch (#18)", 3, function(){
+QUnit.test("flushing a future batch (#18)", function(assert) {
+	assert.expect(3);
 	var firstFired, secondFired, thirdFired;
 	var obj = eventQueue({});
 
@@ -95,9 +97,9 @@ QUnit.test("flushing a future batch (#18)", 3, function(){
 		queues.batch.stop();
 
 		eventQueue.flush();
-		QUnit.ok(firstFired, "first fired");
-		QUnit.ok(secondFired, "second fired");
-		QUnit.ok(thirdFired, "third fired");
+		assert.ok(firstFired, "first fired");
+		assert.ok(secondFired, "second fired");
+		assert.ok(thirdFired, "third fired");
 	});
 	obj.on("first", function(){
 		firstFired = true;
@@ -115,11 +117,12 @@ QUnit.test("flushing a future batch (#18)", 3, function(){
 });
 
 if(typeof document !== "undefined") {
-	QUnit.test("can listen to DOM events", 1,function(){
+	QUnit.test("can listen to DOM events",function(assert) {
+		assert.expect(1);
 		var el = document.createElement("div");
 		document.querySelector('#qunit-fixture').appendChild(el);
 		var handler = function(){
-			QUnit.ok(true, "click dispatched");
+			assert.ok(true, "click dispatched");
 		};
 		eventQueue.on.call(el,"click", handler);
 		domEvents.dispatch(el, "click");
@@ -128,18 +131,18 @@ if(typeof document !== "undefined") {
 	});
 }
 
-QUnit.test("handler-less unbind", function(){
+QUnit.test("handler-less unbind", function(assert) {
 	var obj = eventQueue({});
 
 	obj.addEventListener("first", function(){});
 	obj.addEventListener("first", function(){},"notify");
 
 	var handlers = obj[canSymbol.for("can.meta")].handlers;
-	QUnit.equal(handlers.get(["first"]).length, 2, "2 first handlers");
+	assert.equal(handlers.get(["first"]).length, 2, "2 first handlers");
 	obj.removeEventListener("first");
-	QUnit.equal(handlers.get(["first"]).length, 0, "first handlers removed");
+	assert.equal(handlers.get(["first"]).length, 0, "first handlers removed");
 });
-QUnit.test("key-less unbind", function(){
+QUnit.test("key-less unbind", function(assert) {
 	var obj = eventQueue({});
 
 	obj.addEventListener("first", function(){});
@@ -153,28 +156,29 @@ QUnit.test("key-less unbind", function(){
 	canReflect.onKeyValue(obj,"second", function(){},"notify");
 
 	var handlers = obj[canSymbol.for("can.meta")].handlers;
-	QUnit.equal(handlers.get([]).length, 8, "2 first handlers");
+	assert.equal(handlers.get([]).length, 8, "2 first handlers");
 	obj.removeEventListener();
-	QUnit.equal(handlers.get([]).length, 4, "first handlers removed");
+	assert.equal(handlers.get([]).length, 4, "first handlers removed");
 });
 
-QUnit.test("@@can.isBound symbol", function() {
+QUnit.test("@@can.isBound symbol", function(assert) {
 	var obj = eventQueue({});
 	var handler = function() {};
 
-	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound initially");
+	assert.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound initially");
 
 	obj.on("first", handler);
-	QUnit.ok(obj[canSymbol.for("can.isBound")](), "Object is bound after adding listener");
+	assert.ok(obj[canSymbol.for("can.isBound")](), "Object is bound after adding listener");
 
 	obj.off("first", handler);
-	QUnit.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound after removing listener");
+	assert.ok(!obj[canSymbol.for("can.isBound")](), "Object is not bound after removing listener");
 });
 
 
 
 
-test('listenTo and stopListening', 9, function () {
+QUnit.test('listenTo and stopListening', function(assert) {
+	assert.expect(9);
 	var parent = eventQueue({});
 	var child1 = eventQueue({});
 	var child2 = eventQueue({});
@@ -183,37 +187,37 @@ test('listenTo and stopListening', 9, function () {
 	parent.listenTo(child1, 'change', function () {
 		change1WithId++;
 		if (change1WithId === 1) {
-			ok(true, 'child 1 handler with id called');
+			assert.ok(true, 'child 1 handler with id called');
 		} else {
-			ok(false, 'child 1 handler with id should only be called once');
+			assert.ok(false, 'child 1 handler with id should only be called once');
 		}
 	});
 
 	child1.bind('change', function () {
-		ok(true, 'child 1 handler without id called');
+		assert.ok(true, 'child 1 handler without id called');
 	});
 	var foo1WidthId = 0;
 	parent.listenTo(child1, 'foo', function () {
 		foo1WidthId++;
 		if (foo1WidthId === 1) {
-			ok(true, 'child 1 foo handler with id called');
+			assert.ok(true, 'child 1 foo handler with id called');
 		} else {
-			ok(false, 'child 1 foo handler should not be called twice');
+			assert.ok(false, 'child 1 foo handler should not be called twice');
 		}
 	});
 	// child2 stuff
 	(function () {
 		var okToCall = true;
 		parent.listenTo(child2, 'change', function () {
-			ok(okToCall, 'child 2 handler with id called');
+			assert.ok(okToCall, 'child 2 handler with id called');
 			okToCall = false;
 		});
 	}());
 	child2.bind('change', function () {
-		ok(true, 'child 2 handler without id called');
+		assert.ok(true, 'child 2 handler without id called');
 	});
 	parent.listenTo(child2, 'foo', function () {
-		ok(true, 'child 2 foo handler with id called');
+		assert.ok(true, 'child 2 foo handler with id called');
 	});
 
 
@@ -229,17 +233,17 @@ test('listenTo and stopListening', 9, function () {
 	eventQueue.dispatch.call(child2, 'change');
 	eventQueue.dispatch.call(child2, 'foo');
 });
-test('stopListening on something you\'ve never listened to ', function () {
+QUnit.test('stopListening on something you\'ve never listened to ', function(assert) {
 	var parent = eventQueue({});
 	var child = eventQueue({});
 	parent.listenTo({
 		addEventListener: function(){}
 	}, 'foo');
 	parent.stopListening(child, 'change');
-	ok(true, 'did not error');
+	assert.ok(true, 'did not error');
 });
 
-test('One will listen to an event once, then unbind', function() {
+QUnit.test('One will listen to an event once, then unbind', function(assert) {
 	var mixin = 0;
 
 	// Mixin call
@@ -251,7 +255,7 @@ test('One will listen to an event once, then unbind', function() {
 	obj.dispatch('mixin');
 	obj.dispatch('mixin');
 	obj.dispatch('mixin');
-	equal(mixin, 1, 'one should only fire a handler once (mixin)');
+	assert.equal(mixin, 1, 'one should only fire a handler once (mixin)');
 
 });
 
@@ -305,7 +309,8 @@ onlyDevTest("getWhatIChange", function(assert) {
 	);
 });
 
-test('One will listen to an event once, then unbind', 0, function() {
+QUnit.test('One will listen to an event once, then unbind', function(assert) {
+	assert.expect(0);
 	var mixin = 0;
 
 	// Mixin call
@@ -313,7 +318,7 @@ test('One will listen to an event once, then unbind', 0, function() {
 		obj2 = eventQueue({});
 
 	obj1.listenTo(obj2,"foo", function(){
-		QUnit.ok(false, "this handler should not be called");
+		assert.ok(false, "this handler should not be called");
 	});
 
 	obj1.stopListening();
@@ -323,14 +328,14 @@ test('One will listen to an event once, then unbind', 0, function() {
 
 });
 
-test("unbind undefined with stopListening and onValue", function(){
+QUnit.test("unbind undefined with stopListening and onValue", function(assert) {
 	var HANDLER = function(){};
 	var value = canReflect.assignSymbols({},{
 		"can.onValue": function(handler){
-			QUnit.equal(handler, HANDLER, "handler onValue")
+			assert.equal(handler, HANDLER, "handler onValue")
 		},
 		"can.offValue": function(handler){
-			QUnit.equal(handler, HANDLER, "handler offValue")
+			assert.equal(handler, HANDLER, "handler offValue")
 		}
 	});
 
@@ -341,31 +346,31 @@ test("unbind undefined with stopListening and onValue", function(){
 
 });
 
-test("stopListeningArgumentsToKeys", function(){
+QUnit.test("stopListeningArgumentsToKeys", function(assert) {
 	var getKeys = eventQueue.stopListeningArgumentsToKeys;
 	var obj = {};
 	var that = {context: obj, defaultQueue: "mutate"};
 	var obj2 = {};
 	var handler = function(){};
 
-	QUnit.deepEqual( getKeys.call(that), [], "obj.stopListening()");
-	QUnit.deepEqual( getKeys.call(that, obj2), [obj2], "obj.stopListening(obj2)");
+	assert.deepEqual( getKeys.call(that), [], "obj.stopListening()");
+	assert.deepEqual( getKeys.call(that, obj2), [obj2], "obj.stopListening(obj2)");
 
-	QUnit.deepEqual( getKeys.call(that,"event"), [obj, "event"], "obj.stopListening('event')");
-	QUnit.deepEqual( getKeys.call(that,"event", handler), [obj, "event", "mutate", handler], "obj.stopListening('event', handler)");
-	QUnit.deepEqual( getKeys.call(that,"event", handler, "notify"), [obj, "event", "notify", handler], "obj.stopListening('event', handler,'notify')");
+	assert.deepEqual( getKeys.call(that,"event"), [obj, "event"], "obj.stopListening('event')");
+	assert.deepEqual( getKeys.call(that,"event", handler), [obj, "event", "mutate", handler], "obj.stopListening('event', handler)");
+	assert.deepEqual( getKeys.call(that,"event", handler, "notify"), [obj, "event", "notify", handler], "obj.stopListening('event', handler,'notify')");
 
-	QUnit.deepEqual( getKeys.call(that, obj2, handler), [obj2, undefined, "mutate", handler], "obj.stopListening(obj2, handler)");
+	assert.deepEqual( getKeys.call(that, obj2, handler), [obj2, undefined, "mutate", handler], "obj.stopListening(obj2, handler)");
 
-	QUnit.deepEqual( getKeys.call(that, obj2, handler, "notify"), [obj2, undefined, "notify", handler], "obj.stopListening(obj2, handler, notify)");
+	assert.deepEqual( getKeys.call(that, obj2, handler, "notify"), [obj2, undefined, "notify", handler], "obj.stopListening(obj2, handler, notify)");
 
-	QUnit.deepEqual( getKeys.call(that, "event", "notify"), [obj, "event", "notify"], "obj.stopListening('event', 'notify')");
+	assert.deepEqual( getKeys.call(that, "event", "notify"), [obj, "event", "notify"], "obj.stopListening('event', 'notify')");
 
 
 
 });
 
-test("listenTo and stopListening takes a queueName", function(){
+QUnit.test("listenTo and stopListening takes a queueName", function(assert) {
 	var CALLS = [];
 	var obj = eventQueue({});
 	var handler = function(){
@@ -380,7 +385,7 @@ test("listenTo and stopListening takes a queueName", function(){
 	obj.stopListening("first", handler, "notify");
 	obj.dispatch("first");
 
-	QUnit.deepEqual(CALLS, ["first"], "event, handler, queue");
+	assert.deepEqual(CALLS, ["first"], "event, handler, queue");
 	CALLS = [];
 
 	obj.listenTo("first",handler,"notify");
@@ -389,7 +394,7 @@ test("listenTo and stopListening takes a queueName", function(){
 	obj.stopListening("first");
 	obj.dispatch("first");
 
-	QUnit.deepEqual(CALLS, ["first","second"], "event");
+	assert.deepEqual(CALLS, ["first","second"], "event");
 	CALLS = [];
 
 	obj.listenTo("first",handler,"notify");
@@ -398,12 +403,12 @@ test("listenTo and stopListening takes a queueName", function(){
 	obj.stopListening("first","notify");
 	obj.dispatch("first");
 
-	QUnit.deepEqual(CALLS, ["first","second","second"], "event, queue");
+	assert.deepEqual(CALLS, ["first","second","second"], "event, queue");
 	CALLS = [];
 
 });
 
-QUnit.test("on goes onEvent, addEventListener, then onKeyValue", function(){
+QUnit.test("on goes onEvent, addEventListener, then onKeyValue", function(assert) {
 	var called = [];
 	var fullSet = canReflect.assignSymbols({
 		addEventListener: function(){
@@ -419,7 +424,7 @@ QUnit.test("on goes onEvent, addEventListener, then onKeyValue", function(){
 	})
 	eventQueue.on.call(fullSet, "event", function(){});
 
-	QUnit.deepEqual(called, ["onEvent"]);
+	assert.deepEqual(called, ["onEvent"]);
 
 	called = [];
 	var addEvent = canReflect.assignSymbols({
@@ -433,5 +438,5 @@ QUnit.test("on goes onEvent, addEventListener, then onKeyValue", function(){
 	})
 	eventQueue.on.call(addEvent, "event", function(){});
 
-	QUnit.deepEqual(called, ["addEventListener"]);
+	assert.deepEqual(called, ["addEventListener"]);
 });
