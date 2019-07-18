@@ -62,32 +62,37 @@ onlyDevTest("getWhatIChange", function(assert) {
 		"should return undefined if handlers is empty"
 	);
 
-	var getChanges = function(value) {
+	var getChanges = function(values) {
 		return function() {
-			return { valueDependencies: new Set([value]) };
+			return { valueDependencies: new Set(values) };
 		};
 	};
 
 	var mutateHandler = function mutateHandler() {};
+	var domQueueHandler = function domHandler() {};
 	var domUIHandler = function domUIHandler() {};
 	var notifyHandler = function notifyHandler() {};
 
 	// faux observables to set as being changed by the handlers in the queues
 	var a = function a() {};
 	var b = function b() {};
+	var c = function c() {};
 
-	mutateHandler[getChangesSymbol] = getChanges(a);
-	domUIHandler[getChangesSymbol] = getChanges(b);
-	notifyHandler[getChangesSymbol] = getChanges(a);
+	mutateHandler[getChangesSymbol] = getChanges([a]);
+	domUIHandler[getChangesSymbol] = getChanges([b]);
+	notifyHandler[getChangesSymbol] = getChanges([a]);
+	domQueueHandler[getChangesSymbol] = getChanges([c]);
+	domQueueHandler[canSymbol.for("can.element")] = document.createElement("div");
 
 	observable.handlers.add(["mutate", mutateHandler]);
 	observable.handlers.add(["domUI", domUIHandler]);
 	observable.handlers.add(["notify", notifyHandler]);
+	observable.handlers.add(["dom", domQueueHandler]);
 
 	var whatIChange = getWhatIChange();
 	assert.deepEqual(
 		whatIChange.mutate,
-		{ valueDependencies: new Set([a, b]) },
+		{ valueDependencies: new Set([a, b, c]) },
 		"domUI and mutate queues handlers deps should be included in .mutate"
 	);
 	assert.deepEqual(
