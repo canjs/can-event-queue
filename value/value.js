@@ -203,7 +203,8 @@ var symbols = {
 			var notifyHandlers = this.handlers.get(["notify"]);
 			var mutateHandlers = [].concat(
 				this.handlers.get(["mutate"]),
-				this.handlers.get(["domUI"])
+				this.handlers.get(["domUI"]),
+				this.handlers.get(["dom"])
 			);
 
 			if (notifyHandlers.length) {

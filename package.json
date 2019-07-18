@@ -46,7 +46,7 @@
     "can-dom-events": "^1.0.0",
     "can-key-tree": "^1.1.0",
     "can-log": "^1.0.0",
-    "can-queues": "^1.0.0",
+    "can-queues": "canjs/can-queues#dom-queue",
     "can-reflect": "^1.10.2",
     "can-symbol": "^1.2.0"
   },
