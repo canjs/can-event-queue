@@ -115,7 +115,7 @@ var props = {
      * @function can-event-queue/type/type.can.onInstancePatches @can.onInstancePatches
      * @parent can-event-queue/type/type
      *
-     * @description Listen to patch changes on any isntance.
+     * @description Listen to patch changes on any instance.
      *
      * @signature `canReflect.onInstancePatches(Type, handler(instance, patches) )`
      *
